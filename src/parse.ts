@@ -61,17 +61,17 @@ export interface GameEvent {
 }
 
 /**
- * Infinity Engine colour markup. The engine formats these as "^" followed by
+ * Infinity Engine color markup. The engine formats these as "^" followed by
  * "0x" + 8 hex digits to open, and "^-" to close.
  */
-const COLOUR = /\^(?:0x[0-9a-fA-F]{8}|#[0-9a-fA-F]{6,8}|-)/g;
+const COLOR = /\^(?:0x[0-9a-fA-F]{8}|#[0-9a-fA-F]{6,8}|-)/g;
 
 /**
  * C0 and C1 control characters, ESC included.
  *
  * Game text is third-party input: it comes from dialog.tlk, which any installed
  * mod can rewrite, so a creature or spell name is attacker-authored as far as
- * this code is concerned. It is normalised once, here, rather than defended
+ * this code is concerned. It is normalized once, here, rather than defended
  * against at each sink — the viewer escapes HTML, but `deno task patterns` and
  * the capture summary print stored text straight to a terminal, where an ANSI
  * escape sequence would be interpreted rather than displayed.
@@ -79,9 +79,9 @@ const COLOUR = /\^(?:0x[0-9a-fA-F]{8}|#[0-9a-fA-F]{6,8}|-)/g;
 // deno-lint-ignore no-control-regex -- matching control characters is precisely the intent
 const CONTROL = /[\u0000-\u001F\u007F-\u009F]/g;
 
-/** Normalise one line of game text: drop engine colour markup and control characters. */
-export function stripColour(s: string): string {
-  return s.replace(COLOUR, "").replace(CONTROL, " ").replace(/\s+/g, " ").trim();
+/** Normalize one line of game text: drop engine color markup and control characters. */
+export function stripColor(s: string): string {
+  return s.replace(COLOR, "").replace(CONTROL, " ").replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -107,7 +107,7 @@ const SENTENCE = /[.!?]["')\]]?$/;
  * combat resolution. Still guesses, because they have not been observed yet:
  * experience, gold, loot, level-up and party messages.
  *
- * Anything unmatched is kept verbatim rather than mislabelled - "other" when it
+ * Anything unmatched is kept verbatim rather than mislabeled - "other" when it
  * has no speaker, "status" when it does. Run `deno task patterns` to see both
  * buckets, add rules, then `deno task import` to re-classify without replaying.
  */
@@ -254,7 +254,7 @@ export function parseLine(line: string): GameEvent | null {
   const id = toInt(f[1]);
   if (id === null) return null;
 
-  const raw = stripColour(f.slice(6).join("\t"));
+  const raw = stripColor(f.slice(6).join("\t"));
   return {
     id,
     wallClock: WALL_CLOCK.exec(prefix)?.[1] ?? null,

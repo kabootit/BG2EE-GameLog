@@ -100,7 +100,7 @@ logs/               raw captured sessions; the source of truth, never rewritten
   after any change to the game's mod set — `deno task install-mod`.
 - **The classification rules in `src/parse.ts` are provisional.** The engine builds feedback text from
   `dialog.tlk` with token substitution; the exact wording varies by game version and is rewritten by
-  mods. Unmatched lines are kept verbatim as `kind='other'` rather than mislabelled — use
+  mods. Unmatched lines are kept verbatim as `kind='other'` rather than mislabeled — use
   `deno task patterns` on a real session to find what to add, then `deno task import` to re-classify
   without replaying.
 - **`SPELL_DAMAGE_TYPES` in `src/parse.ts` will need widening as new spell schools appear.** The

@@ -138,7 +138,7 @@ const MAX_SORT_KEYS = 4;
  * Build ORDER BY from `sort=col:dir,col:dir,...`, most significant first.
  *
  * Column names cannot be bound as parameters, so every one is checked against
- * SORTABLE and anything unrecognised is dropped rather than interpolated.
+ * SORTABLE and anything unrecognized is dropped rather than interpolated.
  */
 function orderClause(url: URL): string {
   const terms: string[] = [];

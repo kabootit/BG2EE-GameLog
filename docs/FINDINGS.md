@@ -24,7 +24,7 @@ literal `table.remove(combatLog, %d)` is present in the game binary. Because tha
 is what turns a shifting array position into a stable monotonic row id. See `mod/gamelog/lib/a7log.lua`.
 
 Row contents are strings that have already been resolved from `dialog.tlk`, including Infinity Engine
-colour markup (`^` + `0x` + 8 hex digits to open, `^-` to close — from the binary's `^%#010x%s^-`).
+color markup (`^` + `0x` + 8 hex digits to open, `^-` to close — from the binary's `^%#010x%s^-`).
 
 ## Getting data out of the Lua sandbox
 
@@ -203,7 +203,7 @@ party-side name becomes an `opponent`, propagated until stable. Names that only 
 `neutral`.
 
 **Party membership always beats the combat graph.** This is the guard that matters: the captured
-session contains `Rurik -> Zeris 1x 8`, a real friendly-fire hit. Plain two-colouring of the damage
+session contains `Rurik -> Zeris 1x 8`, a real friendly-fire hit. Plain two-coloring of the damage
 graph would have made Zeris an opponent. Because auto-pause had already named him party, he stays
 party — and the row surfaces as `party -> party`, which is a useful thing to be able to query rather
 than a bug to hide.
@@ -273,7 +273,7 @@ have existed if the prefix had not turned up.
 
 Bisecting these was worth the trouble: with the broken tap the game exited cleanly and silently at
 51 lines of stdout with no crash report and no error message, which looks identical to "the transport
-does not work". The control — same launch, mod uninstalled — ran fine, which is what localised it.
+does not work". The control — same launch, mod uninstalled — ran fine, which is what localized it.
 
 **Verified end to end:** tap → `Infinity_Log` → stdout → pty capture → parse (prefix stripped,
 wall-clock harvested) → SQLite, read concurrently by `serve.ts` while the game was still running (WAL

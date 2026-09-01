@@ -114,7 +114,7 @@ Everything this tool stores originates in the application's own text — names, 
 any installed extension can rewrite. That makes every stored value third-party input.
 
 The framing that helps: **you do not need to believe extension authors are malicious.** You need only
-observe that they have no reason to sanitise strings that were only ever going to be read by a human
+observe that they have no reason to sanitize strings that were only ever going to be read by a human
 inside an application window. Nobody is attacking you; the data is simply not written to your
 assumptions.
 
@@ -143,23 +143,23 @@ itself.
 
 The terminal is the one that gets missed, and it got missed here. Escaping had been thought about
 carefully for the browser — quotes included, attributes considered — while a diagnostic command printed
-the same untrusted strings straight to stdout, unexamined. The defence had been attached to the sink
+the same untrusted strings straight to stdout, unexamined. The defense had been attached to the sink
 that was salient, not to the data.
 
 Worth listing the sinks you *don't* have yet, too. "Export to a file named after the actor" is one
 refactor away from path traversal, and writing that down costs nothing.
 
-## 7. Normalise at a choke point, not at each sink
+## 7. Normalize at a choke point, not at each sink
 
 Having found two sinks, the tempting fix is to defend both. The better fix is to notice you will add a
 third and forget.
 
-So normalise once, where the data enters your model — strip control characters, drop markup, canonicalise
+So normalize once, where the data enters your model — strip control characters, drop markup, canonicalize
 whitespace — and let every sink inherit it. Per-sink escaping still matters where the sink has its own
 grammar (HTML does), but the general-purpose hazards belong at the boundary.
 
 This is the same principle as redacting in the write path rather than cleaning files afterwards, and it
-applies broadly: **put the defence where new code inherits it by default, not where new code must remember
+applies broadly: **put the defense where new code inherits it by default, not where new code must remember
 to add it.**
 
 ---
@@ -253,8 +253,8 @@ The strongest tactic is to make a checklist item unnecessary. Two from this proj
 
 - *"Remember to redact before publishing"* became **redaction in the write path**. The item is gone;
   the system can no longer produce unredacted output.
-- *"Remember to escape at every sink"* became **normalisation at the parse boundary**. New sinks
-  inherit the defence instead of needing to be added to a list.
+- *"Remember to escape at every sink"* became **normalization at the parse boundary**. New sinks
+  inherit the defense instead of needing to be added to a list.
 
 Whenever an item starts with *remember to*, ask what would have to be true for it to be deletable.
 
@@ -270,7 +270,7 @@ by reading files and matching patterns. No AST, no framework, no dependency:
 | service bound to loopback | assert the literal is present *and* the wildcard is absent |
 | no unparameterised SQL identifiers | find interpolations inside SQL strings, require each to be a known-safe expression |
 | untrusted text escaped | find data-derived interpolations that skip the escape helper |
-| defence wired into the write path | assert the call exists *and* precedes the write |
+| defense wired into the write path | assert the call exists *and* precedes the write |
 | published artifacts clean | grep the committed data for the patterns you care about |
 | confirmation precedes execution | compare the index of each in the source |
 
@@ -333,7 +333,7 @@ can this one reach?**
 - [ ] For every discovered binary: preserve which lookup matched, show provenance, confirm.
 - [ ] Draw the path third-party data takes through your system, and name the boundary.
 - [ ] Enumerate sinks — including the terminal — and how each one fails.
-- [ ] Normalise at a choke point so new sinks inherit the defence.
+- [ ] Normalize at a choke point so new sinks inherit the defense.
 - [ ] Make the invariants executable, and prove each check can fail.
 - [ ] Put the guard inside the risky command, not around it.
 - [ ] Record accepted risks with the conditions that make them acceptable.

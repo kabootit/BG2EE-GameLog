@@ -40,7 +40,7 @@ Two things cut through it:
   through the background-job wrapper the failure reported exit 0. Run directly, it reported **139** —
   128 + 11, SIGSEGV. The signal was there the whole time; the wrappers hid it.
 - **Bisect against a control.** Uninstall the mod, launch the identical way, see if the symptom
-  disappears. That single comparison localised the fault to our patch in one step, after two wrong
+  disappears. That single comparison localized the fault to our patch in one step, after two wrong
   hypotheses.
 
 ### 3. `Infinity_Log` output is wrapped, not verbatim
@@ -79,7 +79,7 @@ the element you chose can be hidden.
 
 - **Count occurrences of every anchor first.** Of the three used here, one appeared twice
   (`leftSidebarBackground`) and a first-choice anchor (`toolbarTop = toolbarTop - h`) also appeared
-  twice and had to be discarded. Multi-line regex anchors were abandoned entirely in favour of
+  twice and had to be discarded. Multi-line regex anchors were abandoned entirely in favor of
   verified-unique single-line ones.
 - **Make the patch fail loudly if an anchor is missing.** `COUNT_REGEXP_INSTANCES` + `PATCH_FAIL`. A
   patch that silently matches nothing installs "successfully" and looks correct right up until you go
@@ -104,7 +104,7 @@ table.remove = function(t, pos, ...) return _remove(t, pos, ...) end
 table.remove = function(t, ...) return _remove(t, ...) end
 ```
 
-Naming an intermediate parameter materialises it as `nil` when the caller omitted it, changing the
+Naming an intermediate parameter materializes it as `nil` when the caller omitted it, changing the
 call the wrapped function sees. This breaks every single-argument call site in code you don't own.
 
 ### 9. Overriding a global is a legitimate hook when the engine evaluates chunks

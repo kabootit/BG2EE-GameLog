@@ -29,7 +29,7 @@ dialog.tlk → message window → combatLog (Lua) → stdout → parser → SQLi
 
 Nothing on that path is authored here. Treat `actor`, `target`, `detail`, `spell` and `raw` the way you
 would treat a form field, and note that the danger is not hypothetical mod malice so much as the
-absence of any reason for mod authors to sanitise strings that were only ever meant to be read by a
+absence of any reason for mod authors to sanitize strings that were only ever meant to be read by a
 human inside a game window.
 
 Two sinks matter, and they fail differently:
@@ -40,9 +40,9 @@ Two sinks matter, and they fail differently:
 - **The terminal.** `deno task patterns` and the capture summary print stored text straight to stdout,
   where an ANSI escape sequence would be *interpreted* rather than displayed.
 
-Rather than defend at each sink, text is normalised **once at the parse boundary**: `stripColour()` in
-`src/parse.ts` drops engine colour markup and every C0/C1 control character, ESC included. A new sink
-then inherits the defence instead of having to remember it — which matters, because the terminal sink
+Rather than defend at each sink, text is normalized **once at the parse boundary**: `stripColor()` in
+`src/parse.ts` drops engine color markup and every C0/C1 control character, ESC included. A new sink
+then inherits the defense instead of having to remember it — which matters, because the terminal sink
 was already there and unguarded when only the browser had been considered.
 
 ## The surface
@@ -137,7 +137,7 @@ it. The `html-escaping` and `untrusted-text` checks in `deno task lint` exist fo
 
 Values are always bound with `?`. But column names cannot be bound, so `ORDER BY`, `GROUP BY` and the
 filter columns are interpolated — and are safe **only** because each is checked against the `SORTABLE`
-and `GROUPABLE` allowlists first. Unrecognised names are dropped, not passed through. The `exclude`
+and `GROUPABLE` allowlists first. Unrecognized names are dropped, not passed through. The `exclude`
 filter builds an `IN (?, ?, …)` with one placeholder per value.
 
 This is the invariant most likely to be broken by a future change that adds "just one more" sortable

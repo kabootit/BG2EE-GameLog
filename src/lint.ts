@@ -140,7 +140,7 @@ async function checkHtmlEscaping(fail: Fail) {
 /**
  * Game text is third-party input — dialog.tlk is rewritten by any installed mod,
  * so creature and spell names are attacker-authored as far as this code is
- * concerned. It is normalised once at the parse boundary rather than defended
+ * concerned. It is normalized once at the parse boundary rather than defended
  * against at each sink: the viewer escapes HTML, but the terminal reports print
  * stored text directly, where an ANSI escape would be interpreted.
  */

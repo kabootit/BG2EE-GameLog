@@ -62,7 +62,7 @@ async function main() {
     }
 
     // Pass 2: who is on which side is only knowable once it has all been seen -
-    // an enemy that only shows up late still has to colour the earlier rows.
+    // an enemy that only shows up late still has to color the earlier rows.
     for (const event of events) insert(session, sides.label(event));
 
     total += events.length;

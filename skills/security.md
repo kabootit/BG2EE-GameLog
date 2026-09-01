@@ -90,13 +90,13 @@ runtime, would look like a tidy refactor and would remove the check entirely.
 ### New sinks for stored text
 
 **Start from the trust boundary**: every value in the database is third-party input, because game text
-comes from `dialog.tlk` and any installed mod rewrites it. Mod authors have no reason to sanitise
+comes from `dialog.tlk` and any installed mod rewrites it. Mod authors have no reason to sanitize
 strings that were only ever going to be read by a human inside a game window.
 
 So the question for any new code that consumes a stored value is *which sink is this, and how does that
 sink fail?*
 
-| sink | fails as | defence |
+| sink | fails as | defense |
 |---|---|---|
 | HTML text node | XSS | `esc()` |
 | HTML attribute | XSS via quote-breaking | `esc()` — it escapes `"` and `'`, do not hand-roll a narrower version |
@@ -109,8 +109,8 @@ The first three are live today. The last three are listed because they are the s
 would plausibly add — "export to a file named after the actor" is one refactor away from path
 traversal.
 
-Normalisation happens **once, at the parse boundary** (`stripColour()` in `src/parse.ts`), so new sinks
-inherit it. Prefer extending that over adding a defence at a new sink: the terminal sink existed
+Normalization happens **once, at the parse boundary** (`stripColor()` in `src/parse.ts`), so new sinks
+inherit it. Prefer extending that over adding a defense at a new sink: the terminal sink existed
 unguarded for a while precisely because only the browser had been thought about.
 
 ```sh
@@ -146,7 +146,7 @@ For changes to `a7log.lua`:
 
 For each finding: what it is, why it matters, a concrete failure scenario, and the fix. Separate
 **confirmed** from **theoretical** — a latent issue that is not currently reachable is worth fixing but
-should be labelled as latent, not reported as exploitable.
+should be labeled as latent, not reported as exploitable.
 
 Do not pad the report. Zero findings is a valid result.
 

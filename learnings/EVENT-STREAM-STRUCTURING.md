@@ -184,10 +184,10 @@ Taking the speaker as the actor would have inverted every damage statistic in th
 have *looked fine* — "Vampire: 491 damage" is a plausible sentence in either reading. Nothing about the
 shape of the output would have flagged it.
 
-The fix applies broadly: a recogniser can declare that it captured a `source`, and the linker swaps actor
+The fix applies broadly: a recognizer can declare that it captured a `source`, and the linker swaps actor
 and target when it sees one.
 
-> Encode the perspective in the rule that recognises the line, not in every consumer downstream.
+> Encode the perspective in the rule that recognizes the line, not in every consumer downstream.
 
 The check that catches this class of bug is semantic, not syntactic. Not "did it parse" but **"does
 `GROUP BY actor` now mean what I'd say out loud?"** Ask that of every derived relation.
@@ -239,7 +239,7 @@ wrote it is the only one who knows the list needs revisiting. Six months later n
 
 The fix is to record **both** answers on every row:
 
-- the **guarded** attribution — what you analyse;
+- the **guarded** attribution — what you analyze;
 - the **unguarded candidate** — what *would* have been attributed with no type check at all.
 
 The gap between them is a review queue, and it can be reported as a decision:
@@ -286,7 +286,7 @@ written onto specific earlier rows.
 Classifying party versus opposition used three signals of decreasing authority:
 
 1. **Authoritative state**, read directly from the system — the actual roster.
-2. **A behavioural tell**: a particular event type only ever fires for one group. (Auto-pause is a
+2. **A behavioral tell**: a particular event type only ever fires for one group. (Auto-pause is a
    party-side feature; in the captured data it named exactly the six party members and their four
    summons, and never an enemy.)
 3. **A relationship graph**: anyone who trades blows with a known member of one side is on the other.
@@ -298,7 +298,7 @@ data:
 Zeris: Takes 8 missile damage from Rurik
 ```
 
-Friendly fire. Two-colouring the combat graph would have placed a party member with the enemy. Because
+Friendly fire. Two-coloring the combat graph would have placed a party member with the enemy. Because
 membership evidence outranks graph evidence, he stays party.
 
 The nice part: once the precedence is right, the anomaly stops being noise and becomes a *feature* —
@@ -323,7 +323,7 @@ So the options were: change the source data (rename the entities), use a lower-l
 available on this platform, or accept aggregation. What was *not* an option was inferring identity from
 interleaving and presenting the guess as fact.
 
-The same discipline shows up in how absence is labelled. A creature that only ever talks is marked
+The same discipline shows up in how absence is labeled. A creature that only ever talks is marked
 `neutral`, which means **"this stream contained no evidence"** — not "friendly". The same character is
 `opponent` in a session where he fights and `neutral` in one where he doesn't, and carrying the label
 across sessions was deliberately rejected: the same displayed name isn't necessarily the same entity.

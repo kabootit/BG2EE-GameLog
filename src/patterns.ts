@@ -1,9 +1,9 @@
 /**
- * Show what the classifier did not recognise.
+ * Show what the classifier did not recognize.
  *
  * The rules in parse.ts are provisional: the engine's feedback wording varies by
  * game version and is rewritten by mods, so unmatched lines land in kind='other'
- * rather than being mislabelled. This report is how you turn a real session into
+ * rather than being mislabeled. This report is how you turn a real session into
  * better rules - look at the most frequent unmatched text, add a rule, then
  * `deno task import` to re-classify without replaying.
  */
@@ -31,7 +31,7 @@ function main() {
 
   const limit = Number(Deno.args[0] ?? "40");
 
-  // "other" is genuinely unrecognised. "status" is the catch-all for attributed
+  // "other" is genuinely unrecognized. "status" is the catch-all for attributed
   // engine text that matched no rule ("Stunned", "Contingency Active") - it is
   // classified, but it is also where a missing rule hides, so report both.
   const report = (kind: string, heading: string) => {
@@ -44,7 +44,7 @@ function main() {
     for (const { raw, n } of rows) console.log(`  ${String(n).padStart(5)}  ${raw}`);
   };
 
-  report("other", "Unrecognised lines");
+  report("other", "Unrecognized lines");
   report("status", "Catch-all status lines - add a rule if any deserve their own kind");
 
   // Spell attribution only trusts damage types listed in SPELL_DAMAGE_TYPES.

@@ -214,7 +214,7 @@ The reader then:
 
 ## Part 3 — Parse and store (`src/parse.ts`, `src/db.ts`)
 
-`parse.ts` splits the 6 TSV fields, strips colour codes (`^#RRGGBBAA…^-`), and classifies the message
+`parse.ts` splits the 6 TSV fields, strips color codes (`^#RRGGBBAA…^-`), and classifies the message
 text into structured columns:
 
 | column | source |
@@ -225,7 +225,7 @@ text into structured columns:
 | `screen` | `Infinity_GetCurrentScreenName()` |
 | `kind` | regex classification: `attack`, `damage`, `death`, `xp`, `save`, `spell`, `loot`, `dialog`, `chapter`, `other` |
 | `actor`, `target`, `amount` | regex capture groups per kind |
-| `raw` | original text, colour codes stripped |
+| `raw` | original text, color codes stripped |
 
 Classification is regex-over-English-text and will not be exhaustive on the first pass. Anything
 unmatched lands in `kind='other'` with `raw` intact, so **nothing is ever lost**; patterns get added
@@ -284,7 +284,7 @@ This plan, copied into the project so the design rationale lives with the code.
 The record of what was done and why it works — durable and easy to lose otherwise:
 
 - the engine research: `combatLog` as a live Lua table (`ui.menu:21`, `:12369-12388`), the
-  `table.remove(combatLog, %d)` trim behaviour, `Infinity_Log` as the only stdout channel, the
+  `table.remove(combatLog, %d)` trim behavior, `Infinity_Log` as the only stdout channel, the
   missing `io`/`os` libraries, and why EEex was ruled out (Windows-only, targets 2.6.6.0 vs 2.7.3);
 - toolchain verification: `node:sqlite` works flagless on Deno 2.9.6; `Deno.Command` + `script`
   streams a pty, with the `^D\b\b` / `\r\n` artifacts to strip;
@@ -307,7 +307,7 @@ SetPrivateProfileString('Game Options','Effect Text Level','63')  -- already 63 
 
 ## Verification
 
-Staged, so a failure is localised. **Step 1 is a gate** — everything downstream assumes it passes.
+Staged, so a failure is localized. **Step 1 is a gate** — everything downstream assumes it passes.
 
 1. **Does `Infinity_Log` reach stdout?** (~2 min, before writing the mod.) Run the game binary under
    `script` from a terminal, load a save, open the console with **Ctrl+Space**, run

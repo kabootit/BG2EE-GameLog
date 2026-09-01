@@ -30,7 +30,7 @@ against the game binary and `ui.menu`. Knowing where to look came from other peo
   this job if it ran here. Ruled out on platform and game version, but knowing what it can do framed
   what was worth attempting without it.
 - **[WeiDU](https://github.com/WeiDUorg/weidu)** — the framework the tap is packaged with. Its backup
-  and uninstall behaviour is what makes patching a shared `ui.menu` safe to iterate on.
+  and uninstall behavior is what makes patching a shared `ui.menu` safe to iterate on.
 - **[IWDification](https://github.com/Gibberlings3/iwdification)** — unintentionally load-bearing: its
   install extracts `ui.menu` from the biffs into `override/`, which is the reason the file was already
   loose and editable, with no extraction step needed here.
