@@ -1,7 +1,8 @@
-# Learnings
+# Gotchas
 
-Transferable lessons from building this. `FINDINGS.md` records *what this project established* about
-the engine; this file records *what to do differently next time*, with the evidence that produced it.
+Stack-specific traps hit while building this. `FINDINGS.md` records *what this project established*
+about the engine; this file records *what to do differently next time*, with the evidence that
+produced it.
 
 These are specific to this project's stack — the Infinity Engine's Lua UI, WeiDU, Deno, the browser,
 and how the debugging actually went.

@@ -4,7 +4,8 @@ Notes on the method, written up as a learning piece. The worked example is a gam
 combat log, but nothing here depends on that — the same shape turns up in application logs, audit
 trails, chat transcripts, telemetry, anything emitted as a sequence of human-readable events.
 
-`../docs/LEARNINGS.md` holds the stack-specific lessons from the same project. This file is the reasoning.
+`../docs/GOTCHAS.md` holds the stack-specific traps from the same project. This file is the
+reasoning.
 
 ---
 

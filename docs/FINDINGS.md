@@ -4,7 +4,7 @@ How this works, and why it works this way. Written against **BG2:EE build 2.7.3*
 with iwdification, A7-TotLM and A7#ImprovedArcher installed.
 
 For the transferable lessons — what to do differently next time, and the two fatal bugs that only
-live testing exposed — see [LEARNINGS.md](LEARNINGS.md).
+live testing exposed — see [GOTCHAS.md](GOTCHAS.md).
 
 ## The message window is a Lua table
 

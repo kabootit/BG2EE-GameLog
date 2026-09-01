@@ -126,7 +126,7 @@ depends on this game, this engine, or this stack.
 | file | what it covers |
 |---|---|
 | `FINDINGS.md` | how the engine works and why this approach was possible |
-| `LEARNINGS.md` | stack-specific gotchas (Infinity Engine, Lua, Deno, browser) |
+| `GOTCHAS.md` | traps specific to this stack (Infinity Engine, Lua, Deno, browser) |
 | `SECURITY.md` | this project's own policy — surface, invariants, accepted risk |
 | `PLAN.md` | the original design |
 | `../skills/security.md` | the audit procedure — the judgement half `deno task lint` cannot check |

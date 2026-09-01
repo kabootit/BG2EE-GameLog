@@ -58,7 +58,7 @@ src/install_mod.ts  copy the WeiDU mod into the game dir and run WeiDU
 web/viewer.html     self-contained viewer (no CDN, no external requests)
 mod/gamelog/        the WeiDU mod: gamelog.tp2 + lib/a7log.lua (the in-game tap)
 docs/               project-specific: PLAN.md (design), FINDINGS.md (how it works, worklog),
-                    LEARNINGS.md (stack-specific gotchas - read before touching ui.menu or the
+                    GOTCHAS.md (traps specific to this stack - read before touching ui.menu or the
                     tap), SECURITY.md (this project's policy and accepted risk)
 learnings/          general write-ups, source material for longer pieces:
                     EVENT-STREAM-STRUCTURING.md, LOCAL-TOOL-SECURITY.md.
@@ -82,7 +82,7 @@ logs/               raw captured sessions; the source of truth, never rewritten
 
 ## Things that will bite you
 
-`docs/LEARNINGS.md` has the full set with evidence. The ones that cost real time:
+`docs/GOTCHAS.md` has the full set with evidence. The ones that cost real time:
 
 - **Never call engine accessors (`Infinity_GetGameTicks`, `Infinity_GetCurrentScreenName`, …) from
   code that runs while `ui.menu` is loading.** No game exists yet, so they segfault the process — and
