@@ -113,6 +113,11 @@
      from parsing, leaving the page rendered but completely inert. -->
 <script type="module">
 const $ = (id) => document.getElementById(id);
+
+// Every value rendered here originates in game text. Quotes are escaped too,
+// because some of it lands in attributes rather than text nodes.
+const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ESCAPES[c]);
 /** Sort keys, most significant first. Click a header to add, cycle, then drop it. */
 const state = { sort: [], offset: 0, limit: 500 };
 const MAX_SORT_KEYS = 4;
@@ -205,7 +210,7 @@ function cell(column, row) {
   if (column.flag) return value ? '<td class="flag">yes</td>' : "<td></td>";
   if (column.hideWhen && column.hideWhen(row)) return "<td></td>";
   if (value === null || value === undefined || value === "") return "<td></td>";
-  const text = String(value).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const text = esc(value);
   if (column.key === "kind") return `<td><span class="kind">${text}</span></td>`;
   if (column.num) return `<td class="num">${text}</td>`;
   if (column.raw) return `<td class="raw">${text}</td>`;
@@ -257,13 +262,13 @@ async function loadFacets() {
   const fill = (id, rows, allLabel) => {
     const select = $(id);
     const current = select.value;
-    const options = rows.map((r) => `<option value="${r.key}">${r.key} (${r.n})</option>`);
+    const options = rows.map((r) => `<option value="${esc(r.key)}">${esc(r.key)} (${r.n})</option>`);
     // Keep the active selection listed even when the other filters reduce it to
     // zero, or the <select> silently falls back to "all" and the results change.
     if (current && !rows.some((r) => String(r.key) === current)) {
-      options.unshift(`<option value="${current}">${current} (0)</option>`);
+      options.unshift(`<option value="${esc(current)}">${esc(current)} (0)</option>`);
     }
-    select.innerHTML = `<option value="">${allLabel}</option>` + options.join("");
+    select.innerHTML = `<option value="">${esc(allLabel)}</option>` + options.join("");
     select.value = current;
   };
 

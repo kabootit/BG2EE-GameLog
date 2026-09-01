@@ -16,6 +16,14 @@ pty the game's stdout block-buffers at 4 KB — but the orchestration lives in T
 
 ## Conventions
 
+- **This project must not compromise the machine it runs on.** It executes an external binary, patches
+  a game install, injects code into a running process, captures everything that process prints, and
+  serves it over HTTP. Read `docs/SECURITY.md` before touching any of those paths, and keep the
+  invariants listed there — no dependencies, bind loopback, bind SQL values and allowlist identifiers,
+  escape HTML, redact at capture, ask before executing anything not shipped here. `deno task lint`
+  enforces the mechanical half; `skills/security.md` is the procedure for the half that needs
+  judgement. Run it before publishing anything or adding a capture path, command, or permission.
+
 - **Never `git push` without explicit confirmation.** Hard rule. Applies to anything that leaves the
   machine — pushing, creating or changing remotes, publishing. Commit locally, report what is staged,
   then ask. Local operations (staging, committing, branching) need no permission.
@@ -49,11 +57,14 @@ src/config.ts       all paths and settings
 src/install_mod.ts  copy the WeiDU mod into the game dir and run WeiDU
 web/viewer.html     self-contained viewer (no CDN, no external requests)
 mod/gamelog/        the WeiDU mod: gamelog.tp2 + lib/a7log.lua (the in-game tap)
-docs/               project-specific: PLAN.md (design), FINDINGS.md (how it works,
-                    worklog), LEARNINGS.md (stack-specific gotchas)
+docs/               project-specific: PLAN.md (design), FINDINGS.md (how it works, worklog),
+                    LEARNINGS.md (stack-specific gotchas - read before touching ui.menu or the
+                    tap), SECURITY.md (this project's policy and accepted risk)
 learnings/          general write-ups, source material for longer pieces:
-                    EVENT-STREAM-STRUCTURING.md.
-                    KEEP THESE STACK-AGNOSTIC - project detail belongs in docs/
+                    EVENT-STREAM-STRUCTURING.md, LOCAL-TOOL-SECURITY.md.
+                    KEEP THESE STACK-AGNOSTIC - no engine, WeiDU, Lua or Deno specifics.
+                    Project detail belongs in docs/, not here.
+skills/             security.md - the audit procedure
 logs/               raw captured sessions; the source of truth, never rewritten
 ```
 
@@ -67,6 +78,7 @@ logs/               raw captured sessions; the source of truth, never rewritten
 | `deno task import` | re-import raw logs after changing classification rules |
 | `deno task patterns` | show the most frequent unclassified lines |
 | `deno task check` | type-check |
+| `deno task lint` | lint, type-check, and audit the security invariants (see `skills/security.md`) |
 
 ## Things that will bite you
 

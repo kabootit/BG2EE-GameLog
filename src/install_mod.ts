@@ -7,10 +7,18 @@
  * REQUIRES WEIDU. The tap is packaged as a WeiDU mod, so a WeiDU binary must be
  * available; it is not vendored here. On an already-modded install one is simply
  * borrowed from the game directory, which is why this dependency is easy to miss
- * — on a clean install there is nothing to borrow. See findWeidu() for the
- * lookup order and https://github.com/WeiDUorg/weidu/releases for downloads.
+ * — on a clean install there is nothing to borrow.
+ *
+ * That borrowing is also the sharp edge: this script runs an executable it found
+ * by pattern-matching filenames in a directory it does not control. Anything
+ * named `setup-*` there would do. So nothing is executed until the exact path,
+ * how it was found, and its SHA-256 have been shown and confirmed.
+ *
+ *   source:   https://github.com/WeiDUorg/weidu
+ *   releases: https://github.com/WeiDUorg/weidu/releases
  */
 import { GAME_DIR, MOD_DIR, WEIDU } from "./config.ts";
+import { audit, CHECKS, reportFindings } from "./lint.ts";
 
 const MOD_NAME = "gamelog";
 const SETUP = `setup-${MOD_NAME}`;
@@ -57,9 +65,15 @@ async function onPath(command: string): Promise<string | null> {
  *      ships one, so a modded install needs no setup
  *   3. `weidu` on $PATH
  */
-async function findWeidu(): Promise<string> {
+interface Found {
+  path: string;
+  /** How it was located — shown to the user, since it is the provenance. */
+  source: string;
+}
+
+async function findWeidu(): Promise<Found> {
   if (WEIDU !== "") {
-    if (await exists(WEIDU)) return WEIDU;
+    if (await exists(WEIDU)) return { path: WEIDU, source: "$BG2EE_WEIDU" };
     throw new Error(`BG2EE_WEIDU is set to "${WEIDU}", which does not exist.`);
   }
 
@@ -69,11 +83,16 @@ async function findWeidu(): Promise<string> {
     if (entry.name.includes(".")) continue; // skip .command / .DEBUG
     if (entry.name === SETUP) continue;
     const info = await Deno.stat(`${GAME_DIR}/${entry.name}`);
-    if (info.mode !== null && (info.mode & 0o111) !== 0) return `${GAME_DIR}/${entry.name}`;
+    if (info.mode !== null && (info.mode & 0o111) !== 0) {
+      return {
+        path: `${GAME_DIR}/${entry.name}`,
+        source: `matched setup-* in the game directory (not verified)`,
+      };
+    }
   }
 
   const fromPath = await onPath("weidu");
-  if (fromPath !== null) return fromPath;
+  if (fromPath !== null) return { path: fromPath, source: "weidu on $PATH" };
 
   throw new Error(
     [
@@ -90,8 +109,50 @@ async function findWeidu(): Promise<string> {
   );
 }
 
+async function sha256(path: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", await Deno.readFile(path));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Show exactly what is about to be executed, and get a yes.
+ *
+ * This script locates WeiDU by pattern-matching filenames in the game directory,
+ * which is not a trusted source — any executable named `setup-*` would be picked
+ * up and run. The checksum is printed so it can be compared against the official
+ * release before anything happens. There is deliberately no flag to skip this.
+ */
+async function confirmBinary(path: string, source: string): Promise<void> {
+  const { size } = await Deno.stat(path);
+
+  console.log(`\nAbout to execute an external binary:\n`);
+  console.log(`  path     ${path}`);
+  console.log(`  found    ${source}`);
+  console.log(`  size     ${size.toLocaleString()} bytes`);
+  console.log(`  sha256   ${await sha256(path)}\n`);
+  console.log(`  WeiDU is the Infinity Engine mod installer. Verify before running:`);
+  console.log(`    source    https://github.com/WeiDUorg/weidu`);
+  console.log(`    releases  https://github.com/WeiDUorg/weidu/releases\n`);
+
+  if (!confirm("  Execute this binary?")) throw new Error("Aborted — nothing was run.");
+  console.log("");
+}
+
 async function main() {
   const uninstall = Deno.args.includes("--uninstall");
+
+  // This is the command that executes an external binary and modifies a game
+  // installation, so it verifies the invariants itself rather than trusting that
+  // `deno task lint` was run. Living in main() rather than the task definition
+  // means running the script directly cannot bypass it.
+  const findings = await audit();
+  if (reportFindings(findings, false)) {
+    throw new Error(
+      "Refusing to install: security invariants are broken. Fix them, or run\n" +
+        "`deno task lint` for the full report. See docs/SECURITY.md.",
+    );
+  }
+  console.log(`security ${CHECKS.length} invariants verified`);
 
   if (!await exists(`${GAME_DIR}/chitin.key`)) {
     throw new Error(`Not a game directory: ${GAME_DIR}`);
@@ -100,12 +161,17 @@ async function main() {
   await copyTree(`${MOD_DIR}/${MOD_NAME}`, `${GAME_DIR}/${MOD_NAME}`);
   console.log(`mod      ${GAME_DIR}/${MOD_NAME}`);
 
+  // Confirm whatever will actually run — including a setup-gamelog left behind
+  // by an earlier install, which is itself a copied binary.
   const setupPath = `${GAME_DIR}/${SETUP}`;
-  if (!await exists(setupPath)) {
+  if (await exists(setupPath)) {
+    await confirmBinary(setupPath, `left in the game directory by a previous install`);
+  } else {
     const weidu = await findWeidu();
-    await Deno.copyFile(weidu, setupPath);
+    await confirmBinary(weidu.path, weidu.source);
+    await Deno.copyFile(weidu.path, setupPath);
     await Deno.chmod(setupPath, 0o755);
-    console.log(`weidu    copied from ${weidu.split("/").pop()}`);
+    console.log(`weidu    copied from ${weidu.path}`);
   }
 
   const args = uninstall

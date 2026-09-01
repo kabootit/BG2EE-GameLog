@@ -64,6 +64,14 @@ No EEex, no binary patching. Tested on BG2:EE 2.7.3, macOS.
   On a clean, unmodded install there is nothing to borrow: download the release for your platform and
   either put it on `$PATH` or point `$BG2EE_WEIDU` at it.
 
+  Step 2 matches on **filename alone**, in a directory this project does not control — so
+  `install-mod` prints the path, how it was found, and the SHA-256 of whatever it is about to run, and
+  waits for confirmation. Check that checksum against the release you expect
+  ([source](https://github.com/WeiDUorg/weidu) ·
+  [releases](https://github.com/WeiDUorg/weidu/releases)) before saying yes. There is no flag to skip
+  the prompt. `install-mod` also audits the project's own security invariants first (the same checks
+  as `deno task lint`) and refuses to run if any are broken.
+
 ## Quick start
 
 ```sh
@@ -77,6 +85,7 @@ Then, after playing:
 ```sh
 deno task import        # re-derive events.db from logs/ (idempotent)
 deno task patterns      # show unclassified lines and unattributed damage types
+deno task lint          # lint, type-check, and audit the security invariants
 ```
 
 `deno task install-mod --uninstall` restores the original `ui.menu`.
@@ -87,8 +96,8 @@ Each row carries the raw text plus derived fields: `kind`, `actor`, `target`, `a
 `critical`, `spell`, `actor_side` / `target_side` (party / opponent / neutral) and `summon`.
 
 Some of these are inferred rather than stated — the log never says which spell caused a hit, or whose
-side anyone is on. See `learnings/EVENT-STREAM-STRUCTURING.md` for how, and what the inference deliberately
-refuses to guess.
+side anyone is on. See `learnings/EVENT-STREAM-STRUCTURING.md` for how, and what the inference
+deliberately refuses to guess.
 
 ## Layout
 
@@ -99,16 +108,28 @@ mod/gamelog/  the WeiDU mod and the in-game Lua tap
 logs/         raw captured sessions - the source of truth
 learnings/    general write-ups, stack-agnostic
 docs/         project-specific documentation
+skills/       the security audit procedure
 ```
 
 ## Docs
 
+**`learnings/`** — general write-ups. The reasoning rather than the specifics; nothing in them
+depends on this game, this engine, or this stack.
+
 | file | what it covers |
 |---|---|
-| `learnings/EVENT-STREAM-STRUCTURING.md` | the general method: turning an unstructured event stream into structured data |
-| `docs/FINDINGS.md` | how the engine works and why this approach was possible |
-| `docs/LEARNINGS.md` | stack-specific gotchas (Infinity Engine, Lua, Deno, browser) |
-| `docs/PLAN.md` | the original design |
+| `EVENT-STREAM-STRUCTURING.md` | turning an unstructured event stream into structured data |
+| `LOCAL-TOOL-SECURITY.md` | securing a small tool that touches software you don't own |
+
+**`docs/`** — this project specifically.
+
+| file | what it covers |
+|---|---|
+| `FINDINGS.md` | how the engine works and why this approach was possible |
+| `LEARNINGS.md` | stack-specific gotchas (Infinity Engine, Lua, Deno, browser) |
+| `SECURITY.md` | this project's own policy — surface, invariants, accepted risk |
+| `PLAN.md` | the original design |
+| `../skills/security.md` | the audit procedure — the judgement half `deno task lint` cannot check |
 
 ## Caveats
 

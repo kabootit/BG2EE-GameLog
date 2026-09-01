@@ -66,8 +66,22 @@ export interface GameEvent {
  */
 const COLOUR = /\^(?:0x[0-9a-fA-F]{8}|#[0-9a-fA-F]{6,8}|-)/g;
 
+/**
+ * C0 and C1 control characters, ESC included.
+ *
+ * Game text is third-party input: it comes from dialog.tlk, which any installed
+ * mod can rewrite, so a creature or spell name is attacker-authored as far as
+ * this code is concerned. It is normalised once, here, rather than defended
+ * against at each sink — the viewer escapes HTML, but `deno task patterns` and
+ * the capture summary print stored text straight to a terminal, where an ANSI
+ * escape sequence would be interpreted rather than displayed.
+ */
+// deno-lint-ignore no-control-regex -- matching control characters is precisely the intent
+const CONTROL = /[\u0000-\u001F\u007F-\u009F]/g;
+
+/** Normalise one line of game text: drop engine colour markup and control characters. */
 export function stripColour(s: string): string {
-  return s.replace(COLOUR, "").trim();
+  return s.replace(COLOUR, "").replace(CONTROL, " ").replace(/\s+/g, " ").trim();
 }
 
 /**
