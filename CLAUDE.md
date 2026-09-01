@@ -26,6 +26,10 @@ pty the game's stdout block-buffers at 4 KB — but the orchestration lives in T
 - **No personal information** in any file, document, or commit message: no email addresses, no real
   names. Derive filesystem paths from `Deno.env.get("HOME")` (see `src/config.ts`); never hardcode a
   home directory.
+- **`logs/` is committed and the repo is public.** The engine's startup output contains the Steam
+  account id and absolute home-directory paths, so `redact()` in `src/play.ts` strips both as each
+  session is written. If you add another capture path, redact there too — cleaning it up afterwards
+  only works if someone remembers.
 - **No AI attribution** anywhere: no `Co-Authored-By` trailers, no "generated with" footers, no
   tool-credit lines in code, docs, or commits.
 - Every path in `src/config.ts` can be overridden by an environment variable.

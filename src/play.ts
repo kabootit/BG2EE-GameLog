@@ -9,6 +9,25 @@ import { GAME_BINARY, LOGS_DIR, TAP_MARKER } from "./config.ts";
 import { EventLinker, parseLine, parseRoster, SideResolver } from "./parse.ts";
 import { makeInserter, makeSideUpdater, openDb } from "./db.ts";
 
+const HOME = Deno.env.get("HOME") ?? "";
+
+/**
+ * Strip identifying details from a captured line before it is written.
+ *
+ * The engine's startup output carries the Steam account id and absolute paths
+ * under the home directory. Neither has anything to do with the captured events,
+ * and `logs/` is committed to a public repo — so this happens at capture time
+ * rather than being something to remember to clean up afterwards.
+ */
+export function redact(line: string): string {
+  // Replacer function, not a string: "$HOME" in a plain replacement string would
+  // be interpreted as a capture-group reference.
+  const withoutHome = HOME === "" ? line : line.replaceAll(HOME, () => "$HOME");
+  return withoutHome
+    .replace(/\b7656\d{13}\b/g, "<steam-id>")
+    .replace(/(Steam ID:\s*)\d{5,}/gi, "$1<steam-id>");
+}
+
 function stamp(d = new Date()): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}` +
@@ -48,8 +67,10 @@ async function main() {
   let events = 0;
   let luaErrors = 0;
 
-  const handle = (line: string) => {
+  const handle = (captured: string) => {
     lines++;
+    // Redact first, so the log on disk and everything derived from it agree.
+    const line = redact(captured);
     logFile.writeSync(encoder.encode(line + "\n"));
 
     if (line.includes("LUA ERROR:")) {
