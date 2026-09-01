@@ -49,10 +49,11 @@ src/config.ts       all paths and settings
 src/install_mod.ts  copy the WeiDU mod into the game dir and run WeiDU
 web/viewer.html     self-contained viewer (no CDN, no external requests)
 mod/gamelog/        the WeiDU mod: gamelog.tp2 + lib/a7log.lua (the in-game tap)
-docs/               PLAN.md (design), FINDINGS.md (how it works, worklog),
-                    LEARNINGS.md (stack-specific gotchas - read before touching ui.menu or the tap),
-                    EVENT-STREAM-STRUCTURING.md (the general method behind the data model;
-                    source material for a write-up, keep it stack-agnostic)
+docs/               project-specific: PLAN.md (design), FINDINGS.md (how it works,
+                    worklog), LEARNINGS.md (stack-specific gotchas)
+learnings/          general write-ups, source material for longer pieces:
+                    EVENT-STREAM-STRUCTURING.md.
+                    KEEP THESE STACK-AGNOSTIC - project detail belongs in docs/
 logs/               raw captured sessions; the source of truth, never rewritten
 ```
 

@@ -4,7 +4,7 @@ Notes on the method, written up as a learning piece. The worked example is a gam
 combat log, but nothing here depends on that — the same shape turns up in application logs, audit
 trails, chat transcripts, telemetry, anything emitted as a sequence of human-readable events.
 
-`LEARNINGS.md` holds the stack-specific lessons from the same project. This file is the reasoning.
+`../docs/LEARNINGS.md` holds the stack-specific lessons from the same project. This file is the reasoning.
 
 ---
 
@@ -184,7 +184,7 @@ Taking the speaker as the actor would have inverted every damage statistic in th
 have *looked fine* — "Vampire: 491 damage" is a plausible sentence in either reading. Nothing about the
 shape of the output would have flagged it.
 
-The fix generalises: a recogniser can declare that it captured a `source`, and the linker swaps actor
+The fix applies broadly: a recogniser can declare that it captured a `source`, and the linker swaps actor
 and target when it sees one.
 
 > Encode the perspective in the rule that recognises the line, not in every consumer downstream.

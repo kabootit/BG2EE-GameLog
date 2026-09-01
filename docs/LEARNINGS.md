@@ -8,7 +8,7 @@ and how the debugging actually went.
 
 For the general method behind the data model — how an unstructured stream of prose was turned into a
 queryable dataset, and how relationships were deduced from the order of events — see
-[EVENT-STREAM-STRUCTURING.md](EVENT-STREAM-STRUCTURING.md).
+[EVENT-STREAM-STRUCTURING.md](../learnings/EVENT-STREAM-STRUCTURING.md).
 
 ---
 

@@ -12,7 +12,7 @@ and the spell responsible, sorted by actor](resources/viewer.png)
     Only the rightmost column is what the game wrote. Everything else is<br>
     reconstructed — much of it from the order of events rather than their<br>
     wording, since a cause and its effect arrive as separate lines with<br>
-    nothing linking them. <a href="docs/EVENT-STREAM-STRUCTURING.md">How that works</a>.
+    nothing linking them. <a href="learnings/EVENT-STREAM-STRUCTURING.md">How that works</a>.
   </em>
 </p>
 
@@ -87,7 +87,7 @@ Each row carries the raw text plus derived fields: `kind`, `actor`, `target`, `a
 `critical`, `spell`, `actor_side` / `target_side` (party / opponent / neutral) and `summon`.
 
 Some of these are inferred rather than stated — the log never says which spell caused a hit, or whose
-side anyone is on. See `docs/EVENT-STREAM-STRUCTURING.md` for how, and what the inference deliberately
+side anyone is on. See `learnings/EVENT-STREAM-STRUCTURING.md` for how, and what the inference deliberately
 refuses to guess.
 
 ## Layout
@@ -97,14 +97,15 @@ src/          capture, parse, store, serve
 web/          self-contained viewer
 mod/gamelog/  the WeiDU mod and the in-game Lua tap
 logs/         raw captured sessions - the source of truth
-docs/         see below
+learnings/    general write-ups, stack-agnostic
+docs/         project-specific documentation
 ```
 
 ## Docs
 
 | file | what it covers |
 |---|---|
-| `docs/EVENT-STREAM-STRUCTURING.md` | the general method: turning an unstructured event stream into structured data |
+| `learnings/EVENT-STREAM-STRUCTURING.md` | the general method: turning an unstructured event stream into structured data |
 | `docs/FINDINGS.md` | how the engine works and why this approach was possible |
 | `docs/LEARNINGS.md` | stack-specific gotchas (Infinity Engine, Lua, Deno, browser) |
 | `docs/PLAN.md` | the original design |
