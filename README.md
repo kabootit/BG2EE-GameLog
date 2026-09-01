@@ -52,8 +52,17 @@ No EEex, no binary patching. Tested on BG2:EE 2.7.3, macOS.
 ## Requirements
 
 - Baldur's Gate II: Enhanced Edition
-- [Deno](https://deno.com) 2.2+ (uses the built-in `node:sqlite`; no other dependencies)
-- A WeiDU binary in the game directory (any already-installed mod supplies one)
+- [Deno](https://deno.com) 2.2+ — uses the built-in `node:sqlite`, no packages to install
+- **[WeiDU](https://github.com/WeiDUorg/weidu/releases)** — the tap is packaged as a WeiDU mod, so a
+  WeiDU binary must be available. `deno task install-mod` looks in this order:
+
+  1. `$BG2EE_WEIDU`, if set
+  2. any `setup-*` executable in the game directory — every installed mod ships one, so a
+     **modded install needs no action here**
+  3. `weidu` on `$PATH`
+
+  On a clean, unmodded install there is nothing to borrow: download the release for your platform and
+  either put it on `$PATH` or point `$BG2EE_WEIDU` at it.
 
 ## Quick start
 

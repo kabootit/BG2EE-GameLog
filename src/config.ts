@@ -37,6 +37,13 @@ export const BALDUR_LUA = `${USER_DIR}/Baldur.lua`;
 
 export const SERVE_PORT = Number(Deno.env.get("BG2EE_PORT") ?? "8787");
 
+/**
+ * Explicit path to a WeiDU binary. WeiDU is a real external dependency — the tap
+ * is packaged as a WeiDU mod — and it is not vendored here. See findWeidu() in
+ * install_mod.ts for the full lookup order.
+ */
+export const WEIDU = Deno.env.get("BG2EE_WEIDU") ?? "";
+
 /** Prefix the in-game tap puts on every line it emits. */
 export const TAP_MARKER = "A7LOG";
 
