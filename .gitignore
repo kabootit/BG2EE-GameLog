@@ -1,0 +1,6 @@
+# Derived from logs/ - rebuild with `deno task import`
+events.db
+events.db-shm
+events.db-wal
+
+.DS_Store

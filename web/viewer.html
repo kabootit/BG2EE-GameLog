@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BG2EE game log</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfaf7;
+    --panel: #ffffff;
+    --border: #e2ded4;
+    --text: #23201b;
+    --muted: #6f6a60;
+    --accent: #8a5a2b;
+    --row: #f5f2ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17161a;
+      --panel: #1f1e23;
+      --border: #34323a;
+      --text: #e8e5df;
+      --muted: #9a958c;
+      --accent: #d0a06a;
+      --row: #26242b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 1.25rem;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+  h1 { font-size: 1.05rem; margin: 0 0 .9rem; font-weight: 600; letter-spacing: .01em; }
+  h1 span { color: var(--muted); font-weight: 400; }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: .7rem; margin-bottom: .9rem;
+  }
+  label { color: var(--muted); font-size: .82rem; }
+  select, input, button {
+    font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: .3rem .5rem;
+  }
+  input[type=search] { min-width: 15rem; }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  .sortmark { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .spacer { flex: 1; }
+  .status { color: var(--muted); font-size: .82rem; }
+  .wrap {
+    overflow-x: auto; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+  th, td {
+    text-align: left; padding: .4rem .6rem;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  th { position: sticky; top: 0; background: var(--panel); font-weight: 600; }
+  th[data-sort] { cursor: pointer; user-select: none; }
+  th[data-sort]:hover { color: var(--accent); }
+  tbody tr:nth-child(even) { background: var(--row); }
+  td.raw { white-space: normal; min-width: 24rem; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .kind {
+    display: inline-block; padding: 0 .4rem; border-radius: 4px;
+    background: var(--row); border: 1px solid var(--border); font-size: .78rem;
+  }
+  .flag { color: var(--accent); font-weight: 600; }
+  .empty { padding: 2rem; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>BG2EE game log <span id="subtitle"></span></h1>
+
+<div class="controls">
+  <label>session <select id="session"><option value="">all</option></select></label>
+  <label>kind <select id="kind"><option value="">all</option></select></label>
+  <label>group by <select id="groupby">
+    <option value="">none (events)</option>
+    <option value="actor">actor</option>
+    <option value="target">target</option>
+    <option value="kind">kind</option>
+    <option value="detail">detail</option>
+    <option value="spell">spell</option>
+    <option value="summon">summon</option>
+    <option value="target_summon">target summon</option>
+    <option value="actor_side">actor side</option>
+    <option value="target_side">target side</option>
+    <option value="screen">screen</option>
+    <option value="session">session</option>
+  </select></label>
+  <input type="search" id="q" placeholder="search text, actor, target">
+  <div class="spacer"></div>
+  <label><input type="checkbox" id="battle" checked> battle only</label>
+  <label><input type="checkbox" id="auto"> auto-refresh</label>
+  <button id="clearsort" disabled>clear sort</button>
+  <button id="refresh">refresh</button>
+</div>
+
+<div class="status" id="status"></div>
+<div class="wrap"><table><thead id="head"></thead><tbody id="body"></tbody></table></div>
+
+<!-- type="module" is required: this script uses top-level await, which is a
+     syntax error in a classic script and silently prevents the whole block
+     from parsing, leaving the page rendered but completely inert. -->
+<script type="module">
+const $ = (id) => document.getElementById(id);
+/** Sort keys, most significant first. Click a header to add, cycle, then drop it. */
+const state = { sort: [], offset: 0, limit: 500 };
+const MAX_SORT_KEYS = 4;
+let timer = null;
+
+const EVENT_COLUMNS = [
+  { key: "id",         label: "#",      num: true },
+  { key: "game_time",  label: "in-game" },
+  { key: "game_ticks", label: "ticks",  num: true },
+  { key: "kind",       label: "kind" },
+  { key: "actor_side", label: "side" },
+  // Summoned creatures get their own column, so the actor column stays the party
+  // roster and the opposition. The name lives in exactly one of the two.
+  { key: "actor",      label: "actor",  hideWhen: (r) => r.summon !== null },
+  { key: "summon",     label: "summon" },
+  { key: "target",     label: "target", hideWhen: (r) => r.target_summon !== null },
+  { key: "target_summon", label: "tgt summon" },
+  { key: "detail",     label: "detail" },
+  { key: "amount",     label: "amount", num: true },
+  { key: "critical",   label: "crit",   flag: true },
+  { key: "spell",      label: "spell" },
+  { key: "raw",        label: "text",   raw: true },
+];
+
+const GROUP_COLUMNS = [
+  { key: "key",    label: "value" },
+  { key: "events", label: "events", num: true },
+  { key: "damage", label: "damage", num: true },
+  { key: "xp",     label: "xp",     num: true },
+  { key: "crits",  label: "crits",  num: true },
+  { key: "crit_damage", label: "crit dmg", num: true },
+];
+
+/** Kinds hidden by default: narration and bookkeeping, not the fight itself. */
+const HIDDEN_KINDS = ["pause", "dialogue", "other"];
+
+function params() {
+  const p = new URLSearchParams();
+  for (const id of ["session", "kind", "q"]) {
+    if ($(id).value) p.set(id, $(id).value);
+  }
+  if ($("battle").checked) p.set("exclude", HIDDEN_KINDS.join(","));
+  return p;
+}
+
+const sortIndex = (key) => state.sort.findIndex((s) => s.key === key);
+
+function renderHead(columns, sortable) {
+  $("head").innerHTML = "<tr>" + columns.map((c) => {
+    let mark = "";
+    if (sortable) {
+      const i = sortIndex(c.key);
+      if (i !== -1) {
+        const arrow = state.sort[i].dir === "asc" ? "↑" : "↓";
+        // Rank only matters once there is a chain; a lone "1" is just noise.
+        mark = ` <span class="sortmark">${arrow}${state.sort.length > 1 ? i + 1 : ""}</span>`;
+      }
+    }
+    const attr = sortable ? ` data-sort="${c.key}"` : "";
+    return `<th${attr}>${c.label}${mark}</th>`;
+  }).join("") + "</tr>";
+
+  $("clearsort").disabled = state.sort.length === 0;
+  if (!sortable) return;
+
+  for (const th of $("head").querySelectorAll("th[data-sort]")) {
+    th.onclick = () => {
+      const key = th.dataset.sort;
+      const i = sortIndex(key);
+      if (i === -1) {
+        // New keys join as least significant. When the chain is full the last
+        // one gives way, so the primary sort is never disturbed by a stray click.
+        if (state.sort.length >= MAX_SORT_KEYS) state.sort.pop();
+        state.sort.push({ key, dir: "asc" });
+      } else if (state.sort[i].dir === "asc") {
+        state.sort[i].dir = "desc";
+      } else {
+        state.sort.splice(i, 1); // third click drops this key from the chain
+      }
+      state.offset = 0;
+      load();
+    };
+  }
+}
+
+function cell(column, row) {
+  const value = row[column.key];
+  // Boolean columns show only the true case; a column full of "no" is noise.
+  // Checked before the empty test, since 0 is a real value that must stay blank.
+  if (column.flag) return value ? '<td class="flag">yes</td>' : "<td></td>";
+  if (column.hideWhen && column.hideWhen(row)) return "<td></td>";
+  if (value === null || value === undefined || value === "") return "<td></td>";
+  const text = String(value).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  if (column.key === "kind") return `<td><span class="kind">${text}</span></td>`;
+  if (column.num) return `<td class="num">${text}</td>`;
+  if (column.raw) return `<td class="raw">${text}</td>`;
+  return `<td>${text}</td>`;
+}
+
+function renderRows(columns, rows) {
+  if (rows.length === 0) {
+    $("body").innerHTML = `<tr><td class="empty" colspan="${columns.length}">no matching events</td></tr>`;
+    return;
+  }
+  $("body").innerHTML = rows
+    .map((row) => "<tr>" + columns.map((c) => cell(c, row)).join("") + "</tr>")
+    .join("");
+}
+
+async function load() {
+  const groupBy = $("groupby").value;
+  const p = params();
+
+  if (groupBy) {
+    p.set("by", groupBy);
+    const data = await (await fetch("/api/groups?" + p)).json();
+    renderHead(GROUP_COLUMNS, false);
+    renderRows(GROUP_COLUMNS, data.rows);
+    $("status").textContent = `${data.rows.length} groups by ${groupBy}`;
+    return;
+  }
+
+  if (state.sort.length > 0) {
+    p.set("sort", state.sort.map((s) => `${s.key}:${s.dir}`).join(","));
+  }
+  p.set("limit", state.limit);
+  p.set("offset", state.offset);
+  const data = await (await fetch("/api/events?" + p)).json();
+  renderHead(EVENT_COLUMNS, true);
+  renderRows(EVENT_COLUMNS, data.rows);
+
+  const from = data.total === 0 ? 0 : data.offset + 1;
+  const to = data.offset + data.rows.length;
+  $("status").textContent = `${from}–${to} of ${data.total}`;
+}
+
+async function loadFacets() {
+  // Send the active filters: each facet's counts are scoped by every other
+  // filter, so the kind counts reflect the selected session.
+  const data = await (await fetch("/api/facets?" + params())).json();
+
+  const fill = (id, rows, allLabel) => {
+    const select = $(id);
+    const current = select.value;
+    const options = rows.map((r) => `<option value="${r.key}">${r.key} (${r.n})</option>`);
+    // Keep the active selection listed even when the other filters reduce it to
+    // zero, or the <select> silently falls back to "all" and the results change.
+    if (current && !rows.some((r) => String(r.key) === current)) {
+      options.unshift(`<option value="${current}">${current} (0)</option>`);
+    }
+    select.innerHTML = `<option value="">${allLabel}</option>` + options.join("");
+    select.value = current;
+  };
+
+  fill("session", data.sessions, "all sessions");
+  fill("kind", data.kinds, "all kinds");
+  $("subtitle").textContent = `— ${data.total} events total, ${data.sessions.length} session(s)`;
+}
+
+/** Filters changed: facet counts and rows both need reloading. */
+async function refresh() {
+  await loadFacets();
+  await load();
+}
+
+let debounce = null;
+$("q").oninput = () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(() => {
+    state.offset = 0;
+    refresh();
+  }, 200);
+};
+for (const id of ["session", "kind", "groupby"]) {
+  $(id).onchange = () => {
+    state.offset = 0;
+    refresh();
+  };
+}
+$("battle").onchange = () => {
+  // Turning the scope on while a now-hidden kind is selected would leave the
+  // two controls contradicting each other and the table empty. Drop the
+  // selection instead.
+  if ($("battle").checked && HIDDEN_KINDS.includes($("kind").value)) $("kind").value = "";
+  state.offset = 0;
+  refresh();
+};
+$("clearsort").onclick = () => {
+  state.sort = [];
+  state.offset = 0;
+  load();
+};
+$("refresh").onclick = refresh;
+$("auto").onchange = (e) => {
+  clearInterval(timer);
+  if (e.target.checked) timer = setInterval(refresh, 3000);
+};
+
+await refresh();
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+BACKUP ~gamelog/backup~
+AUTHOR ~BG2EE-GameLog~
+VERSION ~1.0~
+
+BEGIN ~BG2EE-GameLog: export the message window to stdout~
+DESIGNATED 0
+REQUIRE_PREDICATE GAME_IS ~bg2ee eet~ ~This component requires BG2:EE or EET.~
+REQUIRE_PREDICATE FILE_EXISTS_IN_GAME ~ui.menu~ ~ui.menu was not found in this installation.~
+
+// The tap itself. ui.menu pulls it in with Infinity_DoFile("a7log"), the same
+// mechanism the stock UI uses to load its translation files (L_en_us).
+COPY ~gamelog/lib/a7log.lua~ ~override/a7log.lua~
+
+COPY_EXISTING ~ui.menu~ ~override~
+
+  // Fail loudly rather than installing a tap that never fires. A silent no-op
+  // here would look exactly like a working install until you went looking for
+  // events that were never captured.
+  COUNT_REGEXP_INSTANCES ~combatLog = {}~ anchor_table
+  COUNT_REGEXP_INSTANCES ~name 'messagesRect'~ anchor_messages
+  COUNT_REGEXP_INSTANCES ~name 'leftSidebarBackground'~ anchor_sidebar
+
+  PATCH_IF (anchor_table = 0) BEGIN
+    PATCH_FAIL ~gamelog: anchor "combatLog = {}" not found in ui.menu.~
+  END
+  PATCH_IF ((anchor_messages = 0) AND (anchor_sidebar = 0)) BEGIN
+    PATCH_FAIL ~gamelog: no tick anchor found in ui.menu (messagesRect / leftSidebarBackground).~
+  END
+
+  // 1. Load the tap right after the engine declares the combat log table.
+  REPLACE_TEXTUALLY ~combatLog = {}~ ~combatLog = {}
+Infinity_DoFile("a7log")~
+
+  // 2. Drive it once per frame. `text lua` expressions are evaluated on every
+  //    render pass, and A7LOG_tick() returns an empty string so nothing draws.
+  //    Two hosts: the message window, and the sidebar background for when the
+  //    message window is collapsed.
+  REPLACE_TEXTUALLY ~name 'messagesRect'~ ~name 'messagesRect'
+		text lua "A7LOG_tick()"~
+
+  REPLACE_TEXTUALLY ~name 'leftSidebarBackground'~ ~name 'leftSidebarBackground'
+		text lua "A7LOG_tick()"~
+
+BUT_ONLY
+
+PRINT ~gamelog installed. Note: ui.menu is shared state - reinstall this component after any mod that rewrites it (iwdification and other UI mods do).~

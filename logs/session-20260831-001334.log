@@ -1,0 +1,79 @@
+^D2026-08-31 00:13:34.890 BaldursGateIIEnhancedEdition[88506:110914240] INFO: CWD: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 00:13:34.893 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 00:13:34.896 BaldursGateIIEnhancedEdition[88506:110914240] INFO: status: 0
+2026-08-31 00:13:34.896 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Creating DPWrapper
+[S_API] SteamAPI_Init(): Loaded '$HOME/Library/Application Support/Steam/Steam.AppBundle/Steam/Contents/MacOS/steamclient.dylib' OK.
+Setting breakpad minidump AppID = 257350
+2026-08-31 00:13:34.988 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 00:13:34.989 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 00:13:35.030 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-08-31 00:13:35.080 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-08-31 00:13:35.081 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-08-31 00:13:35.081 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-08-31 00:13:35.093 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-08-31 00:13:35.094 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-08-31 00:13:35.094 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-08-31 00:13:35.095 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-08-31 00:13:35.108 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-08-31 00:13:35.109 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-08-31 00:13:35.109 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-08-31 00:13:35.110 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-08-31 00:13:35.111 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-08-31 00:13:35.124 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-08-31 00:13:35.124 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-08-31 00:13:35.124 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-08-31 00:13:35.126 BaldursGateIIEnhancedEdition[88506:110914240] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-08-31 00:13:35.141 BaldursGateIIEnhancedEdition[88506:110914240] INFO: LUA: A7LOG	0					gamelog tap loaded
+2026-08-31 00:13:35.166 BaldursGateIIEnhancedEdition[88506:110914240] INFO: LUA: UI string not found: Recent events text will go here.
+2026-08-31 00:13:35.226 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/dialogf.tlk) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/dialogf.tlk
+2026-08-31 00:13:35.226 BaldursGateIIEnhancedEdition[88506:110914240] INFO: LUA: Initializing Quests
+2026-08-31 00:13:35.529 BaldursGateIIEnhancedEdition[88506:110914240] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/4c/tj2xw__94nx1fstq9yzdc3mw0000gp/T/com.beamdog.baldursgateIIenhancededition-steam.savedState
+2026-08-31 00:13:35.727 BaldursGateIIEnhancedEdition[88506:110914240] INFO: gl.useShaders: 1
+gl.has_s3tc: 1
+gl.has_pvrtc: 0
+gl.has_atc: 0
+gl.postprocessing: 0
+gl.uploadFormat: 0x80E1
+gl.uploadType: 0x8367
+gl.versionstring: 2.1 Metal - 89.4
+gl.majorVersion: 2
+gl.minorVersion: 1
+2026-08-31 00:13:35.966 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Font: loaded font STONESML
+2026-08-31 00:13:36.030 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/mx1602.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx1602.mus
+2026-08-31 00:13:36.030 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/mx2202.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx2202.mus
+2026-08-31 00:13:36.030 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/tav5.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav5.mus
+2026-08-31 00:13:36.030 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/tav6.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav6.mus
+2026-08-31 00:13:36.037 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/mx1602.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx1602.mus
+2026-08-31 00:13:36.037 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/mx2202.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx2202.mus
+2026-08-31 00:13:36.037 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/tav5.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav5.mus
+2026-08-31 00:13:36.037 BaldursGateIIEnhancedEdition[88506:110914240] INFO: ERROR! Failed to load file (install:/music/tav6.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav6.mus
+2026-08-31 00:13:36.038 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Baldur's Gate II - Enhanced Edition v2.7.3.0
+2026-08-31 00:13:36.265 BaldursGateIIEnhancedEdition[88506:110914240] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-08-31 00:13:36.271 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Font: loaded font NORMAL
+2026-08-31 00:13:46.460 BaldursGateIIEnhancedEdition[88506:110914240] INFO: Font: Added point size (22) for font STONESML
+2026-08-31 00:13:46.488 BaldursGateIIEnhancedEdition[88506:110914240] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6

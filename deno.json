@@ -1,0 +1,18 @@
+{
+  "tasks": {
+    "play": "deno run --allow-env --allow-run --allow-read --allow-write src/play.ts",
+    "serve": "deno run --allow-env --allow-read --allow-write --allow-net src/serve.ts",
+    "import": "deno run --allow-env --allow-read --allow-write src/import.ts",
+    "patterns": "deno run --allow-env --allow-read --allow-write src/patterns.ts",
+    "install-mod": "deno run --allow-env --allow-run --allow-read --allow-write src/install_mod.ts",
+    "check": "deno check src/*.ts"
+  },
+  "fmt": {
+    "lineWidth": 100
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}

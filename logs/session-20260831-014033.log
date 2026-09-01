@@ -1,0 +1,296 @@
+2026-08-31 01:40:34.880 BaldursGateIIEnhancedEdition[97349:110992011] INFO: CWD: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 01:40:34.884 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 01:40:34.888 BaldursGateIIEnhancedEdition[97349:110992011] INFO: status: 0
+2026-08-31 01:40:34.888 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Creating DPWrapper
+[S_API] SteamAPI_Init(): Loaded '$HOME/Library/Application Support/Steam/Steam.AppBundle/Steam/Contents/MacOS/steamclient.dylib' OK.
+Setting breakpad minidump AppID = 257350
+2026-08-31 01:40:35.020 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 01:40:35.021 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-08-31 01:40:35.061 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-08-31 01:40:35.132 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-08-31 01:40:35.133 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-08-31 01:40:35.133 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-08-31 01:40:35.146 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-08-31 01:40:35.147 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-08-31 01:40:35.149 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-08-31 01:40:35.162 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-08-31 01:40:35.162 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-08-31 01:40:35.162 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-08-31 01:40:35.164 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-08-31 01:40:35.165 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-08-31 01:40:35.177 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-08-31 01:40:35.178 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-08-31 01:40:35.178 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-08-31 01:40:35.179 BaldursGateIIEnhancedEdition[97349:110992011] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-08-31 01:40:35.195 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	0					gamelog tap loaded
+2026-08-31 01:40:35.224 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: UI string not found: Recent events text will go here.
+2026-08-31 01:40:35.268 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/dialogf.tlk) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/dialogf.tlk
+2026-08-31 01:40:35.268 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: Initializing Quests
+2026-08-31 01:40:35.507 BaldursGateIIEnhancedEdition[97349:110992011] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/4c/tj2xw__94nx1fstq9yzdc3mw0000gp/T/com.beamdog.baldursgateIIenhancededition-steam.savedState
+2026-08-31 01:40:35.634 BaldursGateIIEnhancedEdition[97349:110992011] INFO: gl.useShaders: 1
+gl.has_s3tc: 1
+gl.has_pvrtc: 0
+gl.has_atc: 0
+gl.postprocessing: 0
+gl.uploadFormat: 0x80E1
+gl.uploadType: 0x8367
+gl.versionstring: 2.1 Metal - 89.4
+gl.majorVersion: 2
+gl.minorVersion: 1
+2026-08-31 01:40:35.687 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: loaded font STONESML
+2026-08-31 01:40:36.163 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/mx1602.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx1602.mus
+2026-08-31 01:40:36.163 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/mx2202.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx2202.mus
+2026-08-31 01:40:36.163 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/tav5.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav5.mus
+2026-08-31 01:40:36.163 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/tav6.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav6.mus
+2026-08-31 01:40:36.168 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/mx1602.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx1602.mus
+2026-08-31 01:40:36.168 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/mx2202.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx2202.mus
+2026-08-31 01:40:36.168 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/tav5.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav5.mus
+2026-08-31 01:40:36.168 BaldursGateIIEnhancedEdition[97349:110992011] INFO: ERROR! Failed to load file (install:/music/tav6.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav6.mus
+2026-08-31 01:40:36.170 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Baldur's Gate II - Enhanced Edition v2.7.3.0
+2026-08-31 01:40:36.453 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-08-31 01:40:36.458 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: loaded font NORMAL
+2026-08-31 01:40:46.645 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (16) for font STONESML
+2026-08-31 01:40:46.658 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-08-31 01:40:50.125 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (42) for font NORMAL
+2026-08-31 01:40:51.240 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (45) for font NORMAL
+2026-08-31 01:40:51.245 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (18) for font STONESML
+2026-08-31 01:40:53.904 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (45) for font NORMAL
+2026-08-31 01:40:53.957 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (18) for font STONESML
+2026-08-31 01:40:55.094 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-08-31 01:41:02.503 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: loaded font REALMS
+2026-08-31 01:41:02.503 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (28) for font REALMS
+2026-08-31 01:41:02.508 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (21) for font STONESML
+2026-08-31 01:41:02.508 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (32) for font STONESML
+2026-08-31 01:41:10.712 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: Initializing Quests
+2026-08-31 01:41:11.160 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: Initializing Quests
+2026-08-31 01:41:11.173 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-08-31 01:41:11.173 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-08-31 01:41:11.173 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-08-31 01:41:11.229 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: loaded font FLOATTXT
+2026-08-31 01:41:11.229 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (18) for font FLOATTXT
+2026-08-31 01:41:11.285 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (25) for font NORMAL
+2026-08-31 01:41:11.286 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: loaded font TOOLTIP
+2026-08-31 01:41:11.286 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (25) for font TOOLTIP
+2026-08-31 01:41:14.037 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	1	45636000	40362	Day 7, Hour 1 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cAlarion^-: ^0xffd7c8a0Yes?^-
+2026-08-31 01:41:14.038 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: loaded font POSTANTI
+2026-08-31 01:41:14.038 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (21) for font POSTANTI
+2026-08-31 01:41:17.361 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	2	45638880	43687	Day 7, Hour 1 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cAlarion^-: ^0xffd7c8a0It shall be.^-
+2026-08-31 01:41:18.297 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	3	45639600	44624	Day 7, Hour 1 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xffabababTartle^-: ^0xffbed7d7Hello again, Alarion. The arena awaits!^-
+2026-08-31 01:41:19.868 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	4	45639600	46194	Day 7, Hour 1 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xffc3803cAlarion^-: ^0xffd7c8a0I'm ready for my next fight.^-
+2026-08-31 01:41:19.868 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	5	45639600	46194	Day 7, Hour 1 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xffabababTartle^-: ^0xffbed7d7Will you be fighting our latest offering, or will you attempt to fight one of your previous battles again?^-
+2026-08-31 01:41:21.013 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	6	45639660	47340	Day 7, Hour 1 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cAlarion^-: ^0xffd7c8a0I'd like to fight my next battle.^-
+2026-08-31 01:41:21.121 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_START_BATTLE,m_nValue=1
+2026-08-31 01:41:21.121 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_201,m_nValue=1
+2026-08-31 01:41:21.121 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ARENA,m_nValue=2
+2026-08-31 01:41:21.121 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_INTERVIEW,m_nValue=1
+2026-08-31 01:41:21.669 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_BATTLE_COMPLETE,m_nValue=0
+2026-08-31 01:41:21.737 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_START_BATTLE,m_nValue=9
+2026-08-31 01:41:26.616 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_START_BATTLE,m_nValue=2
+2026-08-31 01:41:27.296 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=MC_INIT_BATTLE,m_nValue=1
+2026-08-31 01:41:27.296 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_BATTLE_COMPLETE,m_nValue=0
+2026-08-31 01:41:27.297 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ARENA,m_nValue=0
+2026-08-31 01:41:29.478 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ANTIMAGIC,m_nValue=0
+2026-08-31 01:41:37.207 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	7	51307620	63533	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xff3345d9Dennaton^-: ^0xffbed7d7Good evening! Once again, for the amusement of your most discerning tastes, I bring you a performer of such talent and ability as to have vanquished all before them and emerged unscathed! ^-
+2026-08-31 01:41:38.255 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	8	51307620	64581	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xff3345d9Dennaton^-: ^0xffbed7d7It has been whispered that the shining spires of the City of Splendors conceal beneath them dark and terrible secrets. The whispers are true.^-
+2026-08-31 01:41:38.370 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_START_BATTLE,m_nValue=3
+2026-08-31 01:41:38.881 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	9	51307620	65208	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xff3345d9Dennaton^-: ^0xffbed7d7Plucked from the shadows beneath Waterdeep, I give you the vampire lord Gaul and his coven of eternal darkness!^-
+2026-08-31 01:41:39.295 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	10	51307620	65621	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xff3345d9Dennaton^-: ^0xffbed7d7Before the carnage begins, would you like to address your adoring fans, Alarion?^-
+2026-08-31 01:41:41.046 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	11	51307620	67372	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xffc3803cAlarion^-: ^0xffd7c8a0If you truly want a spectacle, ladies and gentlemen, give me something I can use to decorate this pit with my opponents' broken bodies!^-
+2026-08-31 01:41:41.046 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	12	51307620	67373	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_DIALOG_CONFIRM	^0xff3345d9Dennaton^-: ^0xffbed7d7Imagine the excitement of this mighty performer using YOUR gift to defeat this foe. Do not deny yourselves such an opportunity!^-
+2026-08-31 01:41:41.133 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_REWARD,m_nValue=1
+2026-08-31 01:41:42.228 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_START_BATTLE,m_nValue=4
+2026-08-31 01:41:44.357 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_201,m_nValue=2
+2026-08-31 01:41:45.351 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	13	51310440	71677	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffd7c8a0You shall feel undeath's eternal embrace.^-
+2026-08-31 01:41:45.523 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_REWARD,m_nValue=2
+2026-08-31 01:41:46.631 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_REWARD,m_nValue=3
+2026-08-31 01:41:46.631 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_PROB_LOW,m_nValue=20
+2026-08-31 01:41:46.631 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_PROB_HIGH,m_nValue=45
+2026-08-31 01:41:46.632 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	14	51311460	72958	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:41:59.899 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	15	51311460	86225	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cAlarion^-: ^0xffd7c8a0What is my task?^-
+2026-08-31 01:42:11.336 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	16	51311460	97662	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffd7c8a0Yes?^-
+2026-08-31 01:42:17.783 BaldursGateIIEnhancedEdition[97349:110992011] INFO: Font: Added point size (21) for font NORMAL
+2026-08-31 01:42:25.008 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	17	51311460	111334	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff388ddfRurik^-: ^0xffd7c8a0Yes?^-
+2026-08-31 01:42:40.455 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	18	51311460	126781	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffd7c8a0Hmm?^-
+2026-08-31 01:42:50.770 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	19	51311460	137095	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffd7c8a0Yes?^-
+2026-08-31 01:43:08.973 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	20	51311460	155299	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffd7c8a0Yeah?^-
+2026-08-31 01:43:11.363 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	21	51311460	157689	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffbed7d7Singing Bard Song^-
+2026-08-31 01:43:13.328 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	22	51311460	159653	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffd7c8a0I hope this is worth it.^-
+2026-08-31 01:43:15.064 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	23	51311520	161389	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:43:15.095 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	24	51311460	161421	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:43:15.132 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	25	51311460	161457	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffbed7d7 Enrage : Tyras^-
+2026-08-31 01:43:15.132 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	26	51311460	161458	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:43:15.132 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	27	51311460	161458	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffbed7d7When the berserk state ends, the character will take 15 damage.^-
+2026-08-31 01:43:16.707 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	28	51311460	163033	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffbed7d7Stopped Singing Bard Song^-
+2026-08-31 01:43:22.230 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	29	51311460	168556	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:43:22.481 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	30	51311700	168807	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffd7c8a0Contingency Active^-
+2026-08-31 01:43:22.481 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	31	51311700	168807	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7 Stoneskin : Gaul^-
+2026-08-31 01:43:22.810 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	32	51311880	169136	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:50:30.789 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	33	51311940	597141	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:50:31.229 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_REWARD,m_nValue=4
+2026-08-31 01:50:31.229 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=ohb_item_prob_low,m_nValue=33
+2026-08-31 01:50:31.229 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=ohb_item_prob_high,m_nValue=58
+2026-08-31 01:50:31.572 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	34	51312600	597924	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffd7c8a0Contingency Active^-
+2026-08-31 01:50:31.572 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	35	51312600	597924	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7 Stoneskin : Gaul^-
+2026-08-31 01:50:31.572 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	36	51312600	597924	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffd7c8a0Chain Contingency^-
+2026-08-31 01:50:31.572 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	37	51312600	597924	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7 Protection From Energy : Gaul^-
+2026-08-31 01:50:31.572 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	38	51312600	597924	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7 Protection From Magical Weapons : Gaul^-
+2026-08-31 01:50:31.573 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	39	51312600	597924	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7 Spell Turning : Gaul^-
+2026-08-31 01:50:31.573 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	40	51312600	597925	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffd7c8a0Contingency Active^-
+2026-08-31 01:50:31.573 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	41	51312600	597925	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7 Stoneskin : Gaul^-
+2026-08-31 01:50:31.573 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	42	51312600	597925	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7Protection From Energy^-
+2026-08-31 01:50:31.573 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	43	51312600	597925	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7Protected from Magical Weapons^-
+2026-08-31 01:50:31.573 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	44	51312600	597925	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffbed7d7Protected by Spell Turning^-
+2026-08-31 01:50:31.748 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	45	51312780	598099	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffd7c8a0*attempts to hide in shadows*^-
+2026-08-31 01:50:31.881 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	46	51312900	598233	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffd7c8a0*attempts to hide in shadows*^-
+2026-08-31 01:50:32.322 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_REWARD,m_nValue=6
+2026-08-31 01:50:32.322 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_ROLL,m_nValue=2
+2026-08-31 01:50:33.354 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	47	51314100	599706	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:50:33.389 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	48	51314100	599741	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffbed7d7Casts Entangle^-
+2026-08-31 01:50:33.389 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	49	51314100	599741	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:51:29.859 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	50	51314160	656211	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:51:29.889 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_201_ITEM_GREAT,m_nValue=1
+2026-08-31 01:51:29.890 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=OHB_ITEM_REWARD,m_nValue=11
+2026-08-31 01:51:30.065 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	51	51314280	656417	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:51:30.110 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	52	51314280	656462	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff388ddfRurik^-: ^0xffbed7d7Casts Summon Deva^-
+2026-08-31 01:51:30.110 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	53	51314280	656463	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff388ddfRurik^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:51:34.136 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	54	51314280	660488	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:51:34.273 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	55	51314400	660625	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffd7c8a0I shall return you to the dust!^-
+2026-08-31 01:51:34.316 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	56	51314460	660668	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Gaul^-: ^0xffd7c8a0Your pitiful attacks cannot harm me!^-
+2026-08-31 01:51:34.340 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	57	51314460	660692	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Deva^-
+2026-08-31 01:51:34.407 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	58	51314520	660759	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffd7c8a0I shall return you to the dust!^-
+2026-08-31 01:51:34.476 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	59	51314580	660828	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Deva^-
+2026-08-31 01:51:34.547 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	60	51314640	660898	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffd7c8a0I shall return you to the dust!^-
+2026-08-31 01:51:34.614 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	61	51314700	660966	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Deva^-
+2026-08-31 01:51:34.987 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	62	51315060	661339	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffbed7d7Attacks Vampire^-
+2026-08-31 01:51:35.020 BaldursGateIIEnhancedEdition[97349:110992011] INFO: sAchieveID=NONE,m_sGlobalName=MC_INIT_BATTLE,m_nValue=2
+2026-08-31 01:51:35.162 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	63	51315180	661514	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Deva^-: ^0xffbed7d7Magic Resistance^-
+2026-08-31 01:51:35.163 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	64	51315180	661515	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Vampire^-: ^0xffbed7d7Save vs. Spell : 20^-
+2026-08-31 01:51:35.195 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	65	51315240	661547	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Vampire^-: ^0xffbed7d7Save vs. Spell : 13^-
+2026-08-31 01:51:35.262 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	66	51315300	661614	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffbed7d7Attacks Vampire^-
+2026-08-31 01:51:35.361 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	67	51315300	661713	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attack Roll 2 + 3 = 5 : Miss^-
+2026-08-31 01:51:35.361 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	68	51315300	661714	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:51:35.394 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	69	51315300	661746	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff7a73d7Deva^-: ^0xffbed7d7Auto-Paused: Attacked^-
+2026-08-31 01:51:36.083 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	70	51315360	662435	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:51:36.328 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	71	51315540	662680	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Deva^-
+2026-08-31 01:51:36.357 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	72	51315600	662710	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffbed7d7Attacks Deva^-
+2026-08-31 01:51:36.425 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	73	51315660	662777	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Vampire^-: ^0xffbed7d7Save vs. Spell : 11^-
+2026-08-31 01:51:36.872 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	74	51316020	663224	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7 Domination : Mireille^-
+2026-08-31 01:51:36.972 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	75	51316140	663324	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffbed7d7Attack Roll 6 + 16 = 22 : Hit^-
+2026-08-31 01:51:37.224 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	76	51316320	663576	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Mireille^-
+2026-08-31 01:51:37.224 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	77	51316320	663576	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff7a73d7Deva^-: ^0xffbed7d7Attacks Vampire^-
+2026-08-31 01:51:37.424 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	78	51316500	663776	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Takes 15 missile damage from Vidania^-
+2026-08-31 01:51:37.490 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	79	51316500	663842	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:51:48.923 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	80	51316500	675275	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:51:48.958 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	81	51316500	675310	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:51:48.997 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	82	51316500	675349	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Casts Time Stop : Mireille^-
+2026-08-31 01:51:48.997 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	83	51316500	675349	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:51:50.975 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	84	51316500	677327	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:51:52.300 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	85	51317640	678652	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:51:52.344 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	86	51317640	678696	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Casts Stoneskin : Mireille^-
+2026-08-31 01:51:52.344 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	87	51317640	678696	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:51:56.824 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	88	51317700	683176	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:51:57.811 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	89	51318540	684163	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Attacks Vampire^-
+2026-08-31 01:51:58.801 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	90	51319320	685153	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:52:01.035 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	91	51319320	687387	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffd7c8a0I'm waiting.^-
+2026-08-31 01:52:12.812 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	92	51319320	699164	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:52:20.343 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	93	51325920	706695	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:52:20.378 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	94	51325920	706730	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Casts Summon Planetar^-
+2026-08-31 01:52:20.378 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	95	51325920	706730	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7You cannot summon any more creatures.^-
+2026-08-31 01:52:20.378 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	96	51325920	706730	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:52:38.519 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	97	51325920	724871	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:52:43.251 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	98	51330060	729603	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:52:43.276 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	99	51330060	729628	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Casts Glitterdust^-
+2026-08-31 01:52:43.276 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	100	51330060	729629	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:52:45.631 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	101	51330120	731984	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:52:47.654 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	102	51331800	734006	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:52:54.107 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	103	51331860	740459	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:52:54.825 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	104	51332460	741178	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffbed7d7Singing Bard Song^-
+2026-08-31 01:52:54.862 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	105	51332460	741215	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffd7c8a0Your pitiful attacks cannot harm me!^-
+2026-08-31 01:52:54.862 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	106	51332460	741215	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:52:54.906 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	107	51332460	741258	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cAlarion^-: ^0xffbed7d7Casts Animate Dead^-
+2026-08-31 01:52:54.906 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	108	51332460	741258	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cAlarion^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-08-31 01:52:58.218 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	109	51332460	744570	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffd7c8a0Yes?^-
+2026-08-31 01:52:59.332 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	110	51332460	745684	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffd7c8a0Nothing to it.^-
+2026-08-31 01:52:59.846 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	111	51332460	746198	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:52:59.884 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	112	51332520	746236	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffd7c8a0*attempts to hide in shadows*^-
+2026-08-31 01:52:59.884 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	113	51332520	746236	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffd7c8a0*attempts to hide in shadows*^-
+2026-08-31 01:52:59.916 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	114	51332520	746268	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cAlarion^-: ^0xffbed7d7Attacks Vampire^-
+2026-08-31 01:52:59.994 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	115	51332580	746346	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7 Domination : Rurik^-
+2026-08-31 01:53:00.089 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	116	51332700	746441	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffbed7d7Attack Roll 15 + 6 = 21 : Hit^-
+2026-08-31 01:53:00.376 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	117	51332940	746728	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Dire charmed^-
+2026-08-31 01:53:00.475 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	118	51333000	746827	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7 Domination : Rurik^-
+2026-08-31 01:53:00.475 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	119	51333000	746827	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7 Domination : Mireille^-
+2026-08-31 01:53:00.475 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	120	51333000	746827	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Attacks Vidania^-
+2026-08-31 01:53:00.513 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	121	51333060	746865	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffbed7d7Attack Roll 9 + 16 = 25 : Hit^-
+2026-08-31 01:53:00.545 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	122	51333060	746898	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Deva^-
+2026-08-31 01:53:00.777 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	123	51333300	747129	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffbed7d7Attacks Skeleton Warrior^-
+2026-08-31 01:53:00.809 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	124	51333300	747161	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffd7c8a0You will feel the cold hand of death!^-
+2026-08-31 01:53:00.844 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	125	51333360	747196	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Takes 15 missile damage from Tyras^-
+2026-08-31 01:53:00.877 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	126	51333300	747229	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Skeleton Warrior^-
+2026-08-31 01:53:00.877 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	127	51333300	747229	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff848484Mireille^-: ^0xffbed7d7Attack Roll 6 + 0 = 6 : Miss^-
+2026-08-31 01:53:00.877 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	128	51333300	747230	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:53:00.912 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	129	51333300	747264	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff666666Vampire^-: ^0xffbed7d7Attacks Skeleton Warrior^-
+2026-08-31 01:53:00.912 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	130	51333300	747264	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffbed7d7Auto-Paused: Attacked^-
+2026-08-31 01:53:00.912 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	131	51333300	747264	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Vampire^-: ^0xffbed7d7Save vs. Spell : 19^-
+2026-08-31 01:53:01.695 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	132	51333300	748047	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:53:01.737 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	133	51333360	748089	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Takes 12 missile damage from Vidania^-
+2026-08-31 01:53:01.773 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	134	51333300	748125	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attack Roll 11 + 3 = 14 : Hit^-
+2026-08-31 01:53:01.773 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	135	51333300	748125	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Rurik^-: ^0xffbed7d7Save vs. Spell : 8^-
+2026-08-31 01:53:01.773 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	136	51333300	748125	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff7a73d7Deva^-: ^0xffbed7d7Takes 7 crushing damage from Vampire^-
+2026-08-31 01:53:01.773 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	137	51333300	748125	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Blinded^-
+2026-08-31 01:53:01.773 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	138	51333300	748125	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Vampire^-: ^0xffbed7d7Save vs. Spell : 11^-
+2026-08-31 01:53:01.773 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	139	51333300	748125	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:53:01.798 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	140	51333300	748150	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff7a73d7Deva^-: ^0xffbed7d7Auto-Paused: Attacked^-
+2026-08-31 01:53:02.558 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	141	51333360	748910	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:53:02.728 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	142	51333480	749081	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff7a73d7Deva^-: ^0xffbed7d7Attack Roll 11 + 9 = 20 : Hit^-
+2026-08-31 01:53:02.728 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	143	51333480	749081	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Takes 21 crushing damage from Deva^-
+2026-08-31 01:53:02.728 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	144	51333480	749081	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Vampire^-: ^0xffbed7d7Save vs. Spell : 9^-
+2026-08-31 01:53:02.728 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	145	51333480	749081	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Mireille^-: ^0xffbed7d7Save vs. Spell : 16^-
+2026-08-31 01:53:02.932 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	146	51333660	749284	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff388ddfRurik^-: ^0xffbed7d7Dire charmed^-
+2026-08-31 01:53:03.067 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	147	51333720	749420	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:53:05.957 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	148	51333720	752309	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffd7c8a0What?^-
+2026-08-31 01:53:49.382 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	149	51333720	795734	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:53:49.455 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	150	51333720	795808	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff388ddfRurik^-: ^0xffbed7d7Attacks Zeris^-
+2026-08-31 01:53:49.456 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	151	51333720	795808	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Critical Hit Averted^-
+2026-08-31 01:53:49.456 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	152	51333720	795808	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attack Roll 19 + 3 = 22 : Hit^-
+2026-08-31 01:53:49.456 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	153	51333720	795808	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff018bffSkeleton Warrior^-: ^0xffbed7d7Takes 12 crushing damage from Vampire^-
+2026-08-31 01:53:49.456 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	154	51333720	795808	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:53:49.483 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	155	51333720	795835	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff018bffSkeleton Warrior^-: ^0xffbed7d7Auto-Paused: Attacked^-
+2026-08-31 01:54:10.001 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	156	51333780	816353	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffUNPAUSED^-
+2026-08-31 01:54:10.034 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	157	51333780	816386	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffd7c8a0Your pitiful attacks cannot harm me!^-
+2026-08-31 01:54:10.067 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	158	51333840	816420	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffbed7d7Vampire^-: ^0xffbed7d7Magic Resistance^-
+2026-08-31 01:54:10.104 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	159	51333840	816456	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xffc3803cVampire^-: ^0xffbed7d7Attacks Skeleton Warrior^-
+2026-08-31 01:54:10.203 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	160	51333960	816556	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff799624Vidania^-: ^0xffbed7d7Attack Roll 2 + 16 = 18 : Hit^-
+2026-08-31 01:54:10.381 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	161	51334020	816734	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff388ddfRurik^-: ^0xffbed7d7Attack Roll 14 - 8 = 6 : Hit^-
+2026-08-31 01:54:10.382 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	162	51334020	816734	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff0000ffPAUSED^-
+2026-08-31 01:54:10.413 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	163	51334020	816765	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff3345d9Tyras^-: ^0xffbed7d7Attack Roll 10 + 6 = 16 : Hit^-
+2026-08-31 01:54:10.413 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	164	51334020	816765	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffbed7d7Auto-Paused: Attacked^-
+2026-08-31 01:54:10.413 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	165	51334020	816765	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffd7c8a0Rah!^-
+2026-08-31 01:54:10.413 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	166	51334020	816765	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffbed7d7Takes 8 missile damage from Rurik (4 damage bonus)^-
+2026-08-31 01:54:10.442 BaldursGateIIEnhancedEdition[97349:110992011] INFO: LUA: A7LOG	167	51334020	816794	Day 7, Hour 22 (9 Mirtul, 1369)	WORLD_MESSAGES	^0xff8093bcZeris^-: ^0xffbed7d7Auto-Paused: Attacked^-
