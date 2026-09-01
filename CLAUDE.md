@@ -19,6 +19,8 @@ pty the game's stdout block-buffers at 4 KB — but the orchestration lives in T
 - **Never `git push` without explicit confirmation.** Hard rule. Applies to anything that leaves the
   machine — pushing, creating or changing remotes, publishing. Commit locally, report what is staged,
   then ask. Local operations (staging, committing, branching) need no permission.
+- **Show the commit message before committing.** Every time. Propose it, wait for approval or a
+  rewording, then commit. Applies to `--amend` too, since that rewrites a message.
 - **Commit at logical boundaries, not per edit.** One commit per completed change, however many file
   edits that took. While something is still being iterated on — a paragraph being reworded, a rule
   being tuned — `--amend` the in-progress commit instead of stacking new ones. Six commits that all
