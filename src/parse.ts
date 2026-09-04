@@ -22,6 +22,9 @@ export type Kind =
   | "party"
   | "dialogue"
   /** Capture-side marker, not a game event: the tap lost its place and resynced. */
+  /** Extra Combat Info breakdowns: the to-hit and damage computations for one swing. */
+  | "tohit"
+  | "damageroll"
   | "resync"
   | "other";
 
@@ -36,6 +39,14 @@ export interface GameEvent {
   actor: string | null;
   target: string | null;
   amount: number | null;
+  /** Damage prevented by resistance, from a trailing "(N damage resisted)" clause. */
+  resisted: number | null;
+  /**
+   * A die or attack-roll total. Kept apart from `amount` deliberately: amount is
+   * damage or experience, and putting a to-hit total there made a miss look like
+   * it had dealt damage.
+   */
+  roll: number | null;
   /** Sub-type: damage type, save type, spell name, hit/miss, pause reason. */
   detail: string | null;
   /** Set on a damage event that a preceding "Critical Hit" line belongs to. */
@@ -136,7 +147,7 @@ const RULES: Array<{ kind: Kind; re: RegExp }> = [
   {
     kind: "damage",
     re:
-      /^Takes\s+(?<amount>\d+)\s+(?<detail>[A-Za-z]+)\s+damage\s+from\s+(?<source>.+?)(?:\s*\(\d+\s+damage\s+bonus\))?$/i,
+      /^Takes\s+(?<amount>\d+)\s+(?<detail>[A-Za-z]+)\s+damage\s+from\s+(?<source>.+?)(?:\s*\((?:(?<resisted>\d+)\s+damage\s+resisted|[^)]*)\))?$/i,
   },
   // Anchored at the start so a *description* of damage ("...will take 15
   // damage.") is not counted as damage being dealt.
@@ -150,10 +161,18 @@ const RULES: Array<{ kind: Kind; re: RegExp }> = [
   {
     kind: "attack",
     re:
-      /^Attack\s+Roll\s+-?\d+\s*[+-]\s*\d+\s*=\s*(?<amount>-?\d+)\s*:\s*(?<detail>[A-Za-z]+)$/i,
+      /^Attack\s+Roll\s+-?\d+\s*[+-]\s*\d+\s*=\s*(?<roll>-?\d+)\s*:\s*(?<detail>[A-Za-z]+)$/i,
   },
-  { kind: "attack", re: /^Attack\s+Roll\s*[:=]?\s*(?<amount>-?\d+)/i },
+  { kind: "attack", re: /^Attack\s+Roll\s*[:=]?\s*(?<roll>-?\d+)/i },
+  // Extra Combat Info prints the full computation either side of the attack roll.
+  // Distinguished by their component names: +Luck/+SpecialAC for to-hit,
+  // +DamageMod/+Hand bonus for damage. amount is the raw die roll.
+  { kind: "tohit", re: /^Roll:(?<roll>-?\d+)\s*\+Luck:/i },
+  { kind: "damageroll", re: /^Roll:(?<roll>-?\d+)\s*\+DamageMod:/i },
+
   { kind: "attack", re: /^Attacks\s+(?<target>.+)$/i },
+  // With Extra Combat Info on, the engine also emits this longer form.
+  { kind: "attack", re: /^is\s+Attacking\s+(?<target>.+)$/i },
 
   // "Critical Hit", "Critical Hit Averted"
   { kind: "critical", re: /^Critical\s+(?<detail>.+)$/i },
@@ -197,14 +216,17 @@ function clean(v: string | undefined): string | null {
   return s.length > 0 ? s : null;
 }
 
-type Classified = Pick<GameEvent, "kind" | "actor" | "target" | "amount" | "detail">;
+type Classified = Pick<
+  GameEvent,
+  "kind" | "actor" | "target" | "amount" | "roll" | "resisted" | "detail"
+>;
 
 export function classify(text: string): Classified {
   // Capture-side marker, not game text. Tested before speaker extraction because
   // "capture resynced:" would otherwise be read as a creature called
   // "capture resynced" and the rest classified as its speech.
   if (RESYNC.test(text)) {
-    return { kind: "resync", actor: null, target: null, amount: null, detail: null };
+    return { kind: "resync", actor: null, target: null, amount: null, roll: null, resisted: null, detail: null };
   }
 
   const speaker = SPEAKER.exec(text);
@@ -224,6 +246,8 @@ export function classify(text: string): Classified {
         actor: source ?? actor,
         target: source ? actor : clean(g.target),
         amount: toInt(g.amount),
+        roll: toInt(g.roll),
+        resisted: toInt(g.resisted),
         detail: clean(g.detail),
       };
     }
@@ -233,7 +257,7 @@ export function classify(text: string): Classified {
   // ("Stunned", "Contingency Active", "Two Levels Drained"). Unattributed and
   // unmatched stays "other", which is what `deno task patterns` reports on.
   const kind: Kind = actor === null ? "other" : SENTENCE.test(body) ? "dialogue" : "status";
-  return { kind, actor, target: null, amount: null, detail: null };
+  return { kind, actor, target: null, amount: null, roll: null, resisted: null, detail: null };
 }
 
 /**

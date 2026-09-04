@@ -33,6 +33,8 @@ export function openDb(path: string = DB_PATH): Db {
       actor      TEXT,
       target     TEXT,
       amount     INTEGER,
+      roll       INTEGER,
+      resisted   INTEGER,
       detail     TEXT,
       critical   INTEGER NOT NULL DEFAULT 0,
       spell      TEXT,
@@ -68,6 +70,8 @@ const COLUMNS: Array<[string, string]> = [
   ["actor", "TEXT"],
   ["target", "TEXT"],
   ["amount", "INTEGER"],
+  ["roll", "INTEGER"],
+  ["resisted", "INTEGER"],
   ["detail", "TEXT"],
   ["critical", "INTEGER NOT NULL DEFAULT 0"],
   ["spell", "TEXT"],
@@ -98,9 +102,9 @@ export function makeInserter(db: Db): (session: string, e: GameEvent) => void {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO events
       (session, id, wall_clock, game_ticks, clock_ms, game_time, screen,
-       kind, actor, target, amount, detail, critical, spell, spell_candidate,
+       kind, actor, target, amount, roll, resisted, detail, critical, spell, spell_candidate,
        actor_side, target_side, summon, target_summon, raw)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return (session, e) => {
     stmt.run(
@@ -115,6 +119,8 @@ export function makeInserter(db: Db): (session: string, e: GameEvent) => void {
       e.actor,
       e.target,
       e.amount,
+      e.roll,
+      e.resisted,
       e.detail,
       e.critical ? 1 : 0,
       e.spell,

@@ -21,6 +21,8 @@ const SORTABLE = new Set([
   "actor",
   "target",
   "amount",
+  "roll",
+  "resisted",
   "detail",
   "critical",
   "spell",
@@ -168,6 +170,7 @@ function handleGroups(url: URL): Response {
     `SELECT COALESCE(${by}, '(none)') AS key,
             count(*)                                                  AS events,
             COALESCE(sum(CASE WHEN kind = 'damage' THEN amount END), 0) AS damage,
+            COALESCE(sum(resisted), 0)                                  AS resisted,
             COALESCE(sum(CASE WHEN kind = 'xp'     THEN amount END), 0) AS xp,
             sum(critical)                                               AS crits,
             COALESCE(sum(CASE WHEN critical = 1 THEN amount END), 0)    AS crit_damage

@@ -125,20 +125,24 @@ let timer = null;
 
 const EVENT_COLUMNS = [
   { key: "id",         label: "#",      num: true },
-  { key: "game_time",  label: "in-game" },
-  { key: "game_ticks", label: "ticks",  num: true },
+  { key: "game_time",  label: "in-game", verbose: true },
+  { key: "game_ticks", label: "ticks",  num: true, verbose: true },
   { key: "kind",       label: "kind" },
   { key: "actor_side", label: "side" },
   // Summoned creatures get their own column, so the actor column stays the party
   // roster and the opposition. The name lives in exactly one of the two.
   { key: "actor",      label: "actor",  hideWhen: (r) => r.summon !== null },
   { key: "summon",     label: "summon" },
-  { key: "target",     label: "target", hideWhen: (r) => r.target_summon !== null },
-  { key: "target_summon", label: "tgt summon" },
+  { key: "target",     label: "target", hideWhen: (r) => r.target_summon !== null,
+    kinds: ["attack", "damage", "effect", "spell"] },
+  { key: "target_summon", label: "tgt summon", kinds: ["attack", "damage", "effect", "spell"] },
   { key: "detail",     label: "detail" },
-  { key: "amount",     label: "amount", num: true },
-  { key: "critical",   label: "crit",   flag: true },
-  { key: "spell",      label: "spell" },
+  { key: "amount",     label: "amount", num: true,
+    kinds: ["damage", "save", "xp", "gold", "loot", "level"] },
+  { key: "roll",       label: "roll",   num: true, kinds: ["attack", "tohit", "damageroll"] },
+  { key: "resisted",   label: "resisted", num: true, kinds: ["damage"] },
+  { key: "critical",   label: "crit",   flag: true, kinds: ["damage"] },
+  { key: "spell",      label: "spell",  kinds: ["damage"] },
   { key: "raw",        label: "text",   raw: true },
 ];
 
@@ -146,13 +150,18 @@ const GROUP_COLUMNS = [
   { key: "key",    label: "value" },
   { key: "events", label: "events", num: true },
   { key: "damage", label: "damage", num: true },
+  { key: "resisted", label: "resisted", num: true },
   { key: "xp",     label: "xp",     num: true },
   { key: "crits",  label: "crits",  num: true },
   { key: "crit_damage", label: "crit dmg", num: true },
 ];
 
-/** Kinds hidden by default: narration and bookkeeping, not the fight itself. */
-const HIDDEN_KINDS = ["pause", "dialogue", "other"];
+/**
+ * Kinds hidden by default: narration and bookkeeping, plus the per-swing roll
+ * breakdowns, which are two extra rows per attack and drown the timeline.
+ * Still reachable by selecting the kind explicitly.
+ */
+const HIDDEN_KINDS = ["pause", "dialogue", "other", "tohit", "damageroll"];
 
 function params() {
   const p = new URLSearchParams();
@@ -161,6 +170,21 @@ function params() {
   }
   if ($("battle").checked) p.set("exclude", HIDDEN_KINDS.join(","));
   return p;
+}
+
+/**
+ * Columns worth showing right now. Two independent narrowings:
+ *  - "battle only" drops the timing columns, which are for correlating against
+ *    the raw log rather than reading a fight
+ *  - selecting a single kind drops columns that kind never populates. The `kinds`
+ *    lists come from what the data actually sets, not from guesswork.
+ */
+function visibleColumns() {
+  const kind = $("kind").value;
+  const battle = $("battle").checked;
+  return EVENT_COLUMNS.filter((c) =>
+    !(c.verbose && battle) && !(kind && c.kinds && !c.kinds.includes(kind))
+  );
 }
 
 const sortIndex = (key) => state.sort.findIndex((s) => s.key === key);
@@ -246,8 +270,11 @@ async function load() {
   p.set("limit", state.limit);
   p.set("offset", state.offset);
   const data = await (await fetch("/api/events?" + p)).json();
-  renderHead(EVENT_COLUMNS, true);
-  renderRows(EVENT_COLUMNS, data.rows);
+  // "battle only" narrows the columns as well as the rows: the timing columns are
+  // for correlating against the raw log, not for reading a fight.
+  const columns = visibleColumns();
+  renderHead(columns, true);
+  renderRows(columns, data.rows);
 
   const from = data.total === 0 ? 0 : data.offset + 1;
   const to = data.offset + data.rows.length;
@@ -301,7 +328,13 @@ $("battle").onchange = () => {
   // Turning the scope on while a now-hidden kind is selected would leave the
   // two controls contradicting each other and the table empty. Drop the
   // selection instead.
-  if ($("battle").checked && HIDDEN_KINDS.includes($("kind").value)) $("kind").value = "";
+  if ($("battle").checked) {
+    if (HIDDEN_KINDS.includes($("kind").value)) $("kind").value = "";
+    // A sort on a column that is about to disappear would keep applying with no
+    // header left to see it on or click it off.
+    const hidden = new Set(EVENT_COLUMNS.filter((c) => c.verbose).map((c) => c.key));
+    state.sort = state.sort.filter((s) => !hidden.has(s.key));
+  }
   state.offset = 0;
   refresh();
 };

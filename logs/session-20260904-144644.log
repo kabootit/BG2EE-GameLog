@@ -1,0 +1,130 @@
+2026-09-04 14:46:45.100 BaldursGateIIEnhancedEdition[23393:118578602] INFO: CWD: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-09-04 14:46:45.105 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-09-04 14:46:45.109 BaldursGateIIEnhancedEdition[23393:118578602] INFO: status: 0
+2026-09-04 14:46:45.109 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Creating DPWrapper
+[S_API] SteamAPI_Init(): Loaded '$HOME/Library/Application Support/Steam/Steam.AppBundle/Steam/Contents/MacOS/steamclient.dylib' OK.
+Setting breakpad minidump AppID = 257350
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  <steam-id> [API loaded no]
+2026-09-04 14:46:45.206 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-09-04 14:46:45.207 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Get Data Directory: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition
+2026-09-04 14:46:45.245 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-09-04 14:46:45.311 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-09-04 14:46:45.312 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-09-04 14:46:45.312 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-09-04 14:46:45.331 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-09-04 14:46:45.332 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-09-04 14:46:45.332 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-09-04 14:46:45.333 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-09-04 14:46:45.346 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-09-04 14:46:45.347 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-09-04 14:46:45.347 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-09-04 14:46:45.348 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-09-04 14:46:45.351 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(0) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/override
+2026-09-04 14:46:45.364 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(1) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/scripts
+2026-09-04 14:46:45.365 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(2) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/sounds
+2026-09-04 14:46:45.365 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(3) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/sounds
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(4) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/portraits
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(5) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/characters
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(6) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/movies
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(7) $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/lang/en_US/movies
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(8) $HOME/Documents/Baldur's Gate II - Enhanced Edition/override
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(9) $HOME/Documents/Baldur's Gate II - Enhanced Edition/scripts
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(10) $HOME/Documents/Baldur's Gate II - Enhanced Edition/sounds
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(11) $HOME/Documents/Baldur's Gate II - Enhanced Edition/portraits
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(12) $HOME/Documents/Baldur's Gate II - Enhanced Edition/characters
+2026-09-04 14:46:45.366 BaldursGateIIEnhancedEdition[23393:118578602] INFO: scanning:(13) $HOME/Documents/Baldur's Gate II - Enhanced Edition/movies
+2026-09-04 14:46:45.382 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	0					gamelog tap loaded
+2026-09-04 14:46:45.411 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: UI string not found: Recent events text will go here.
+2026-09-04 14:46:45.460 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/dialogf.tlk) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/dialogf.tlk
+2026-09-04 14:46:45.460 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: Initializing Quests
+2026-09-04 14:46:45.550 BaldursGateIIEnhancedEdition[23393:118578602] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/4c/tj2xw__94nx1fstq9yzdc3mw0000gp/T/com.beamdog.baldursgateIIenhancededition-steam.savedState
+2026-09-04 14:46:45.653 BaldursGateIIEnhancedEdition[23393:118578602] INFO: gl.useShaders: 1
+gl.has_s3tc: 1
+gl.has_pvrtc: 0
+gl.has_atc: 0
+gl.postprocessing: 0
+gl.uploadFormat: 0x80E1
+gl.uploadType: 0x8367
+gl.versionstring: 2.1 Metal - 89.4
+gl.majorVersion: 2
+gl.minorVersion: 1
+2026-09-04 14:46:45.682 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: loaded font STONESML
+2026-09-04 14:46:46.283 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/mx1602.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx1602.mus
+2026-09-04 14:46:46.283 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/mx2202.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx2202.mus
+2026-09-04 14:46:46.283 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/tav5.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav5.mus
+2026-09-04 14:46:46.283 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/tav6.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav6.mus
+2026-09-04 14:46:46.289 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/mx1602.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx1602.mus
+2026-09-04 14:46:46.289 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/mx2202.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/mx2202.mus
+2026-09-04 14:46:46.289 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/tav5.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav5.mus
+2026-09-04 14:46:46.289 BaldursGateIIEnhancedEdition[23393:118578602] INFO: ERROR! Failed to load file (install:/music/tav6.mus) at path: $HOME/Library/Application Support/Steam/steamapps/common/Baldur's Gate II Enhanced Edition/music/tav6.mus
+2026-09-04 14:46:46.291 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Baldur's Gate II - Enhanced Edition v2.7.3.0
+2026-09-04 14:46:46.507 BaldursGateIIEnhancedEdition[23393:118578602] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-09-04 14:46:46.512 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: loaded font NORMAL
+2026-09-04 14:46:47.488 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (18) for font STONESML
+2026-09-04 14:46:47.500 BaldursGateIIEnhancedEdition[23393:118578602] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-09-04 14:46:48.122 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (45) for font NORMAL
+2026-09-04 14:46:49.073 BaldursGateIIEnhancedEdition[23393:118578602] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-09-04 14:46:52.102 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: loaded font REALMS
+2026-09-04 14:46:52.102 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (28) for font REALMS
+2026-09-04 14:46:52.108 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (21) for font STONESML
+2026-09-04 14:46:52.109 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (32) for font STONESML
+2026-09-04 14:46:56.227 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: Initializing Quests
+2026-09-04 14:46:56.408 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: Initializing Quests
+2026-09-04 14:46:56.422 BaldursGateIIEnhancedEdition[23393:118578602] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-09-04 14:46:56.422 BaldursGateIIEnhancedEdition[23393:118578602] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-09-04 14:46:56.422 BaldursGateIIEnhancedEdition[23393:118578602] INFO: sAchieveID=NONE,m_sGlobalName=GameDifficulty,m_nValue=6
+2026-09-04 14:46:56.468 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: loaded font FLOATTXT
+2026-09-04 14:46:56.468 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (18) for font FLOATTXT
+2026-09-04 14:46:56.504 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (25) for font NORMAL
+2026-09-04 14:46:56.505 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: loaded font TOOLTIP
+2026-09-04 14:46:56.505 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (25) for font TOOLTIP
+2026-09-04 14:47:06.754 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	1	12667320	21886	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffd7c8a0Nature's servant awaits.^-
+2026-09-04 14:47:06.755 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: loaded font POSTANTI
+2026-09-04 14:47:06.755 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (21) for font POSTANTI
+2026-09-04 14:47:10.661 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	2	12670740	25794	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffffb3f3Imoen^-: ^0xffd7c8a0Yep?^-
+2026-09-04 14:47:11.664 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	3	12671640	26797	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffffb3f3Imoen^-: ^0xffbed7d7Stopped Detecting Traps / Illusions^-
+2026-09-04 14:47:12.079 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	4	12672000	27212	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffffb3f3Imoen^-: ^0xffbed7d7Detecting Traps / Illusions^-
+2026-09-04 14:47:13.261 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	5	12673020	28394	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffffb3f3Imoen^-: ^0xffbed7d7Stopped Detecting Traps / Illusions^-
+2026-09-04 14:47:13.941 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	6	12673560	29074	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffPAUSED^-
+2026-09-04 14:47:13.990 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	7	12673560	29123	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffffb3f3Imoen^-: ^0xffbed7d7Casts Stoneskin : Imoen^-
+2026-09-04 14:47:13.991 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	8	12673560	29123	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffffb3f3Imoen^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-09-04 14:47:14.519 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	9	12673560	29652	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffd7c8a0I await your need.^-
+2026-09-04 14:47:17.281 BaldursGateIIEnhancedEdition[23393:118578602] INFO: Font: Added point size (21) for font NORMAL
+2026-09-04 14:47:21.934 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	10	12673560	37067	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffbed7d7is Casting Barkskin : Minsc^-
+2026-09-04 14:47:23.635 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	11	12673560	38768	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffc0a1aaMinsc^-: ^0xffd7c8a0You point, I punch.^-
+2026-09-04 14:47:29.021 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	12	12673560	44154	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffcb967dBooprikt^-: ^0xffd7c8a0Hmm?^-
+2026-09-04 14:47:31.359 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	13	12673560	46492	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffcb967dBooprikt^-: ^0xffbed7d7Stopped Detecting Traps / Illusions^-
+2026-09-04 14:47:35.508 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	14	12673620	50640	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffUNPAUSED^-
+2026-09-04 14:47:36.869 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	15	12674820	52002	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffffb3f3Imoen^-: ^0xffbed7d7Detecting Traps / Illusions^-
+2026-09-04 14:47:39.793 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	16	12677340	54925	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffPAUSED^-
+2026-09-04 14:47:39.832 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	17	12677340	54965	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffbed7d7Casts Barkskin : Minsc^-
+2026-09-04 14:47:39.832 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	18	12677340	54965	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-09-04 14:47:39.832 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	19	12677340	54965	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffc0a1aaMinsc^-: ^0xffbed7d7Bark Skin^-
+2026-09-04 14:47:40.636 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	20	12677340	55768	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffUNPAUSED^-
+2026-09-04 14:47:42.473 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	21	12678900	57605	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffPAUSED^-
+2026-09-04 14:47:42.518 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	22	12678900	57650	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffcb967dBooprikt^-: ^0xffbed7d7Casts Animate Dead^-
+2026-09-04 14:47:42.518 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	23	12678900	57651	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffcb967dBooprikt^-: ^0xffbed7d7Auto-Paused: Spell Cast^-
+2026-09-04 14:47:44.035 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	24	12678900	59168	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffUNPAUSED^-
+2026-09-04 14:47:44.586 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	25	12679380	59719	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffcb967dBooprikt^-: ^0xffbed7d7Detecting Traps / Illusions^-
+2026-09-04 14:47:47.349 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	26	12681780	62482	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffd7c8a0Yes?^-
+2026-09-04 14:47:48.083 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	27	12682440	63216	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffd7c8a0It is done.^-
+2026-09-04 14:47:48.462 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	28	12682680	63595	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffPAUSED^-
+2026-09-04 14:47:50.267 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	29	12682680	65399	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffUNPAUSED^-
+2026-09-04 14:47:52.061 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	30	12684180	67193	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xff0000ffPAUSED^-
+2026-09-04 14:48:58.911 BaldursGateIIEnhancedEdition[23393:118578602] INFO: LUA: A7LOG	31	12684180	134043	Day 1, Hour 22 (3 Mirtul, 1369)	WORLD_QUICKLOOT	^0xffd6bd9fJaheira^-: ^0xffd7c8a0I am ready.^-
