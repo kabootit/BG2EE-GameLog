@@ -62,16 +62,36 @@ async function main() {
     }
   };
 
+  const writeLine = (text: string) => {
+    try {
+      logFile.writeSync(encoder.encode(text + "\n"));
+    } catch { /* log already closed during shutdown */ }
+  };
+
+  /**
+   * Record a capture-side event in the session log as well as on the console.
+   *
+   * `script` already merges the game's own stderr into the pty, so that stream is
+   * never lost — but this process's own failures went only to the terminal. The
+   * one time that mattered, a fatal error was visible for as long as the terminal
+   * scrollback lasted and left no trace in the file.
+   */
+  const note = (text: string) => {
+    console.error(`  ${text}`);
+    writeLine(`[gamelog] ${text}`);
+  };
+
   const counts = new Map<string, number>();
   let lines = 0;
   let events = 0;
   let luaErrors = 0;
+  let storeErrors = 0;
 
   const handle = (captured: string) => {
     lines++;
     // Redact first, so the log on disk and everything derived from it agree.
     const line = redact(captured);
-    logFile.writeSync(encoder.encode(line + "\n"));
+    writeLine(line);
 
     if (line.includes("LUA ERROR:")) {
       luaErrors++;
@@ -90,8 +110,22 @@ async function main() {
     if (!event) return;
     const linked = linker.apply(event);
     sides.observe(linked);
-    insert(session, sides.label(linked));
-    backfillSides();
+
+    // Storage must never be able to end the capture. The raw log above is the
+    // source of truth and has already been written, so a failed insert costs
+    // nothing that `deno task import` cannot rebuild — whereas throwing here
+    // kills the process and takes the game down with it.
+    try {
+      insert(session, sides.label(linked));
+      backfillSides();
+    } catch (error) {
+      storeErrors++;
+      if (storeErrors === 1) {
+        note(`store failed: ${error}`);
+        note(`capture continues; the raw log is intact. Re-run: deno task import`);
+      }
+    }
+
     events++;
     counts.set(linked.kind, (counts.get(linked.kind) ?? 0) + 1);
     if (events % 50 === 0) console.log(`  ${events} events`);
@@ -109,6 +143,9 @@ async function main() {
     console.log(`lines    ${lines}`);
     console.log(`events   ${events}`);
     if (luaErrors > 0) console.log(`LUA ERRORS ${luaErrors}  <- the tap is broken, check ui.menu`);
+    if (storeErrors > 0) {
+      console.log(`STORE ERRORS ${storeErrors}  <- rows missing from events.db; run: deno task import`);
+    }
     if (events === 0) {
       console.log(
         `\nNo ${TAP_MARKER} lines captured. Either the mod is not installed, or\n` +
@@ -132,7 +169,10 @@ async function main() {
   const child = new Deno.Command("script", {
     args: ["-q", "/dev/null", GAME_BINARY],
     stdout: "piped",
-    stderr: "inherit",
+    // script's own stderr — pty setup failures and the like. The game's stderr is
+    // already merged into the pty, so this is only about script itself, but it is
+    // the channel that reports the launch failing.
+    stderr: "piped",
   }).spawn();
 
   const onInterrupt = () => {
@@ -142,21 +182,41 @@ async function main() {
   };
   Deno.addSignalListener("SIGINT", onInterrupt);
 
-  let buffer = "";
-  for await (const chunk of child.stdout.pipeThrough(new TextDecoderStream())) {
-    buffer += chunk;
-    let nl = buffer.indexOf("\n");
-    while (nl !== -1) {
-      handle(buffer.slice(0, nl));
-      buffer = buffer.slice(nl + 1);
-      nl = buffer.indexOf("\n");
+  const readStdout = async () => {
+    let buffer = "";
+    for await (const chunk of child.stdout.pipeThrough(new TextDecoderStream())) {
+      buffer += chunk;
+      let nl = buffer.indexOf("\n");
+      while (nl !== -1) {
+        handle(buffer.slice(0, nl));
+        buffer = buffer.slice(nl + 1);
+        nl = buffer.indexOf("\n");
+      }
     }
-  }
-  if (buffer.length > 0) handle(buffer);
+    if (buffer.length > 0) handle(buffer);
+  };
 
-  await child.status;
-  Deno.removeSignalListener("SIGINT", onInterrupt);
-  finish();
+  // Must be drained, not just piped: an unread pipe fills and blocks the child.
+  const readStderr = async () => {
+    for await (const chunk of child.stderr.pipeThrough(new TextDecoderStream())) {
+      for (const line of chunk.split("\n")) {
+        if (line.trim() !== "") note(`stderr: ${redact(line)}`);
+      }
+    }
+  };
+
+  try {
+    await Promise.all([readStdout(), readStderr()]);
+    await child.status;
+  } catch (error) {
+    // Record why the capture ended before the log is closed. Without this the
+    // only account of a fatal error is the terminal it was printed to.
+    note(`fatal: ${error}`);
+    throw error;
+  } finally {
+    Deno.removeSignalListener("SIGINT", onInterrupt);
+    finish();
+  }
 }
 
 if (import.meta.main) await main();

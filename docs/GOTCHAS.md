@@ -149,6 +149,33 @@ The fix is therefore not only to resync but to **say so**: on either reset route
 to be reconstructed from missing xp. It is its own `kind` precisely so the viewer's default filter
 cannot hide the warning that data is missing.
 
+### 8d. WAL does not make concurrent *writers* safe, and the loser dies instantly
+
+`journal_mode = WAL` lets readers run alongside a writer, which is why the viewer can refresh during a
+capture. It does **not** let two processes write at once — writers still serialize, and with no
+`busy_timeout` the second one fails immediately with `database is locked` rather than waiting.
+
+Running `deno task import` during a live capture hit exactly this. The insert in `play.ts` threw, the
+exception propagated out of the read loop, the process died — **and took the game down with it**, since
+`play.ts` is the game's parent. From the player's side it looked like the game crashed.
+
+Two independent fixes, because either alone leaves a sharp edge:
+
+```
+PRAGMA busy_timeout = 10000     -- wait for the other writer instead of failing
+```
+
+Measured under real contention: with a competing writer holding the lock for 3s, an insert with no
+timeout fails instantly, and one with the timeout succeeds after 2855 ms.
+
+And in `play.ts`, the insert is wrapped so that **storage can never end the capture**. The raw log
+line is written *before* the insert, so a failed row costs nothing `deno task import` cannot rebuild —
+whereas an exception costs the rest of the session. The crash lost exactly one row of 1207 for this
+reason; everything else was recovered by re-importing.
+
+> Anything downstream of the durable write should be unable to kill the process doing it. Ask which of
+> your steps is the source of truth, and make every later step failable.
+
 ### 8c. `Baldur.lua` is rewritten from memory, so editing it live is silently reverted
 
 The game reads `Baldur.lua` at launch, holds the settings in memory, and writes the file back on exit.

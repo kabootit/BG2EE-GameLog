@@ -14,6 +14,12 @@ export function openDb(path: string = DB_PATH): Db {
   const db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA synchronous = NORMAL");
+  // Several processes hold this open at once: a live capture writing, plus an
+  // import or the viewer. WAL lets readers run alongside a writer, but writers
+  // still serialize — and with no timeout the loser fails instantly with
+  // "database is locked" rather than waiting. Running `deno task import` during
+  // a capture killed the capture process exactly this way.
+  db.exec("PRAGMA busy_timeout = 10000");
   db.exec(`
     CREATE TABLE IF NOT EXISTS events (
       session    TEXT    NOT NULL,
