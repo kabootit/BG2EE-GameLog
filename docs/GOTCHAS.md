@@ -149,6 +149,25 @@ The fix is therefore not only to resync but to **say so**: on either reset route
 to be reconstructed from missing xp. It is its own `kind` precisely so the viewer's default filter
 cannot hide the warning that data is missing.
 
+### 8c. `Baldur.lua` is rewritten from memory, so editing it live is silently reverted
+
+The game reads `Baldur.lua` at launch, holds the settings in memory, and writes the file back on exit.
+Editing it while the game is running therefore accomplishes nothing: the running process overwrites
+your change on quit, and the next launch reads the old value back.
+
+This cost a round trip while diagnosing sparse combat output — the file read `Extra Combat Info = 0`
+immediately after a restart, which looked like the setting had failed to apply, when in fact it had
+been clobbered on the previous exit. Note the file's mtime: if it matches the launch time, you are
+reading what the game just wrote, not what you set.
+
+Worse, several of these settings — `Extra Combat Info` and `Extra Feedback` among them — have no
+in-game control at all, so the file is the only way to set them and the only safe moment is while the
+game is closed.
+
+> Edit it only while the game is closed. The same applies to any config a running process owns rather
+> than merely reads: your edit is not competing with the file, it is competing with the process's
+> memory, and the process wins on exit.
+
 ### 9. Overriding a global is a legitimate hook when the engine evaluates chunks
 
 The engine trims the log by executing the string `table.remove(combatLog, %d)`. Because a Lua chunk

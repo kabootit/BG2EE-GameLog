@@ -72,6 +72,37 @@ No EEex, no binary patching. Tested on BG2:EE 2.7.3, macOS.
   the prompt. `install-mod` also audits the project's own security invariants first (the same checks
   as `deno task lint`) and refuses to run if any are broken.
 
+## Game settings
+
+The tap captures whatever the message window shows, so the game's own feedback settings decide how
+much there is to capture. They live in `Baldur.lua` in the game's user directory — on macOS,
+`~/Documents/Baldur's Gate II - Enhanced Edition/Baldur.lua`:
+
+| setting | value | effect |
+|---|---|---|
+| `Extra Combat Info` | `1` | per-swing combat detail |
+| `Extra Feedback` | `1` | additional feedback messages |
+| `GUI Feedback Level` | `5` | maximum |
+| `Effect Text Level` | `63` | maximum |
+
+**These are not exposed in the in-game options — the file is the only way to set them.** And it must be
+edited **while the game is closed**: BG2:EE holds the settings in memory and rewrites `Baldur.lua` from
+that on exit, so an edit made while the game is running is overwritten the moment you quit, and the
+next launch reads the old value back.
+
+```sh
+# quit the game first, then:
+$EDITOR "$HOME/Documents/Baldur's Gate II - Enhanced Edition/Baldur.lua"
+```
+
+Once set, they persist: the game reads them at launch and writes the same values back on exit.
+
+These adjust volume, not capture: with `Extra Combat Info` at `0` the log still contained attack rolls
+and damage lines, just fewer of them. Nothing the game does not print can be captured.
+
+`Debug Mode = 1` under `Program Options` enables the Ctrl+Space console, useful for inspecting Lua
+state. It was set throughout development; nothing in the capture path is known to require it.
+
 ## Quick start
 
 ```sh
