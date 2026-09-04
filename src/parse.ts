@@ -21,6 +21,8 @@ export type Kind =
   | "loot"
   | "party"
   | "dialogue"
+  /** Capture-side marker, not a game event: the tap lost its place and resynced. */
+  | "resync"
   | "other";
 
 export interface GameEvent {
@@ -98,6 +100,13 @@ const SPEAKER = /^(?<speaker>[A-Za-z][A-Za-z'\- ]{0,29}):\s*(?<rest>.+)$/;
 
 /** Prose ends in sentence punctuation; engine status text ("Contingency Active") does not. */
 const SENTENCE = /[.!?]["')\]]?$/;
+
+/**
+ * Emitted by the tap when it loses its place and resyncs. Its own kind rather
+ * than falling into "other", which the viewer hides by default - a marker
+ * warning that rows are missing must not itself be hidden.
+ */
+const RESYNC = /^capture resynced\b/i;
 
 /**
  * Classification rules, tried in order against the text with the speaker
@@ -191,6 +200,13 @@ function clean(v: string | undefined): string | null {
 type Classified = Pick<GameEvent, "kind" | "actor" | "target" | "amount" | "detail">;
 
 export function classify(text: string): Classified {
+  // Capture-side marker, not game text. Tested before speaker extraction because
+  // "capture resynced:" would otherwise be read as a creature called
+  // "capture resynced" and the rest classified as its speech.
+  if (RESYNC.test(text)) {
+    return { kind: "resync", actor: null, target: null, amount: null, detail: null };
+  }
+
   const speaker = SPEAKER.exec(text);
   const actor = clean(speaker?.groups?.speaker);
   const body = speaker?.groups?.rest ?? text;

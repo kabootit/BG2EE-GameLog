@@ -108,6 +108,47 @@ table.remove = function(t, ...) return _remove(t, ...) end
 Naming an intermediate parameter materializes it as `nil` when the caller omitted it, changing the
 call the wrapped function sees. This breaks every single-argument call site in code you don't own.
 
+### 8b. A guard against re-initialization also blocks re-synchronization
+
+The tap wraps the global `table.remove`, so it is guarded to install only once:
+
+```lua
+if not A7LOG_installed then ... A7LOG_trimmed = 0; A7LOG_emitted = 0 ... end
+```
+
+Correct for the wrapper — double-wrapping would double-count. Wrong for the counters. Loading a save
+re-runs `ui.menu`, which rebinds `combatLog` to a **brand new empty table**, while the guard keeps the
+counters frozen at their old, high values. `A7LOG_emitted < total` is then false forever and the tap
+stops emitting.
+
+**The failure is worse than silence.** Reproduced in Lua against the old file: after the table swap it
+drops rows 4, 5 and 6 outright, then resumes at `4:row7` once enough churn accumulates — so **ids stay
+contiguous while data goes missing**, and any check looking for gaps sees a healthy log.
+
+> Guard what must not be repeated, not the state that must be able to resync. Track the identity of
+> what you are counting (`A7LOG_table ~= combatLog`), reset per-object state when it changes, and keep
+> the session-monotonic id separate so resumed rows cannot overwrite earlier ones under a storage key
+> of `(session, id)`.
+
+**This did fire in practice, and the wrong diagnostic said otherwise.** The load-time probe re-emits on
+every `ui.menu` load, so counting `gamelog tap loaded` looked like a way to detect the reset. Every
+session has exactly one — which was taken as proof the bug had never triggered. It was not: the engine
+clears or rebinds `combatLog` on a save load **without re-running `ui.menu`**, so the probe never fires
+and the reset is invisible to it.
+
+What actually exposed it was the data being internally inconsistent: a fight the player won with no
+damage lines, no experience award for the kills, and a summoned creature appearing in a later fight
+without ever having been summoned. Roughly 175 rows were dropped and capture resumed mid-fight with
+contiguous ids.
+
+> A diagnostic that only observes one route to a failure is worse than none, because a clean result
+> reads as an all-clear for the whole failure.
+
+The fix is therefore not only to resync but to **say so**: on either reset route the tap now emits a
+`resync` row into the normal event stream, so a dropped block is visible in the data instead of having
+to be reconstructed from missing xp. It is its own `kind` precisely so the viewer's default filter
+cannot hide the warning that data is missing.
+
 ### 9. Overriding a global is a legitimate hook when the engine evaluates chunks
 
 The engine trims the log by executing the string `table.remove(combatLog, %d)`. Because a Lua chunk

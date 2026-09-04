@@ -15,8 +15,14 @@
 
 if not A7LOG_installed then
 	A7LOG_installed = true
-	A7LOG_trimmed = 0 -- rows the engine has removed off the front of combatLog
-	A7LOG_emitted = 0 -- absolute id of the last row we exported
+	-- Session-monotonic row id. Never reset: storage is keyed on (session, id),
+	-- so restarting the count would overwrite rows captured earlier.
+	A7LOG_seq = 0
+	-- State for the combatLog table currently being tracked. Reset whenever the
+	-- engine swaps that table out - see A7LOG_drain.
+	A7LOG_table = nil -- identity of the table these counters describe
+	A7LOG_trimmed = 0 -- rows the engine has removed off the front of it
+	A7LOG_seen = 0 -- rows of it we have already exported
 
 	local _remove = table.remove
 	-- Forward the varargs untouched. Turning table.remove(t) into
@@ -76,29 +82,71 @@ local function A7LOG_checkRoster()
 	end
 end
 
+-- Emit a synthetic row in the normal event stream. Used to mark a capture reset,
+-- so a dropped block is visible in the data instead of having to be inferred
+-- from missing xp and creatures that appear without ever being summoned.
+local function A7LOG_note(text)
+	A7LOG_seq = A7LOG_seq + 1
+	Infinity_Log(string.format(
+		"A7LOG\t%d\t%s\t%s\t%s\t%s\t%s",
+		A7LOG_seq,
+		A7LOG_safe(Infinity_GetGameTicks),
+		A7LOG_safe(Infinity_GetClockTicks),
+		A7LOG_safe(Infinity_GetTimeString),
+		A7LOG_safe(Infinity_GetCurrentScreenName),
+		text
+	))
+end
+
 local function A7LOG_drain()
+	-- Loading a save re-runs ui.menu, which rebinds `combatLog` to a brand new
+	-- empty table. The install guard above deliberately does not re-run, so
+	-- without this the counters stay high while the new table starts from zero,
+	-- `A7LOG_seen < total` is never true again, and the tap goes silent for the
+	-- rest of the session. Compare table identity, not contents.
+	if A7LOG_table ~= combatLog then
+		local first = A7LOG_table == nil
+		A7LOG_table = combatLog
+		A7LOG_trimmed = 0
+		A7LOG_seen = 0
+		-- Not on the very first bind, which is not a reset.
+		if not first then
+			A7LOG_note("capture resynced: combatLog was replaced (rows before this may be missing)")
+		end
+	end
+
 	local total = A7LOG_trimmed + #combatLog
+
+	-- Same failure by another route: the table stayed the same object but was
+	-- emptied in a way our table.remove wrapper did not observe.
+	if total < A7LOG_seen then
+		A7LOG_trimmed = 0
+		A7LOG_seen = 0
+		total = #combatLog
+		A7LOG_note("capture resynced: combatLog was cleared (rows before this may be missing)")
+	end
 
 	-- Rows can be trimmed before we ever see them (e.g. a burst between frames).
 	-- Skip past them rather than emitting stale text under fresh ids.
-	if A7LOG_emitted < A7LOG_trimmed then
-		A7LOG_emitted = A7LOG_trimmed
+	if A7LOG_seen < A7LOG_trimmed then
+		A7LOG_seen = A7LOG_trimmed
 	end
 
 	-- Only look at the roster when the log actually moved. Keeps the per-frame
 	-- cost at one comparison, and anything that changes the party (a join, a
 	-- death) writes to the log anyway.
-	if A7LOG_emitted < total then
+	if A7LOG_seen < total then
 		A7LOG_checkRoster()
 	end
 
-	while A7LOG_emitted < total do
-		A7LOG_emitted = A7LOG_emitted + 1
-		local row = combatLog[A7LOG_emitted - A7LOG_trimmed]
+	while A7LOG_seen < total do
+		A7LOG_seen = A7LOG_seen + 1
+		local row = combatLog[A7LOG_seen - A7LOG_trimmed]
 		if row ~= nil then
+			A7LOG_seq = A7LOG_seq + 1
 			Infinity_Log(string.format(
 				"A7LOG\t%d\t%s\t%s\t%s\t%s\t%s",
-				A7LOG_emitted,
+				A7LOG_seq,
 				A7LOG_safe(Infinity_GetGameTicks),
 				A7LOG_safe(Infinity_GetClockTicks),
 				A7LOG_safe(Infinity_GetTimeString),

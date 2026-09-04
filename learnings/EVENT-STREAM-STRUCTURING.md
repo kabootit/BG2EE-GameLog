@@ -280,6 +280,32 @@ evidence and answers questions; the drivers differ only in when they ask.
 Streaming backfill needs one precondition: **stable row identity**, so a late-arriving fact can be
 written onto specific earlier rows.
 
+### A contiguous id sequence does not prove a complete one
+
+Worth stating separately, because it is the check everyone reaches for first. A counter bug on the
+capture side of this project drops events and then carries on numbering from where it left off: the
+ids stay gapless while the data is missing, so "no gaps, therefore nothing lost" passes cleanly on a
+log that lost three rows.
+
+The general form: **if the sequence is produced by the same component that might lose events, it
+cannot also be the evidence that none were lost.**
+
+You need a second, independent signal — and it has to cover *every* route to the failure. The first
+attempt here watched one specific reset path, reported clean, and was wrong: the same reset also
+occurred by a route that signal could not observe, so a clean result read as an all-clear for a failure
+that had actually happened. What exposed it instead was **the data contradicting itself** — a fight the
+player won with no damage recorded, no reward for the kills, and a creature appearing in a later fight
+that was never created.
+
+That is the more general detector, and it is worth reaching for early: ask what the dataset would imply
+if it were complete, and check whether it does. Missing effects with no cause, totals that cannot
+produce the outcome, entities that act before they exist.
+
+The durable fix is to stop requiring detection at all — have the capture **emit an explicit marker when
+it resyncs**, so a dropped block announces itself in the stream instead of having to be inferred. Give
+that marker its own type, too: ours would otherwise have landed in the bucket the default view hides,
+so the warning that data was missing would itself have been missing.
+
 ---
 
 ## 10. When signals conflict, rank them — and record the case that forced the ranking
