@@ -62,10 +62,11 @@ do not have those failure modes.
 - **No personal information** in any file, document, or commit message: no email addresses, no real
   names. Derive filesystem paths from `Deno.env.get("HOME")` (see `src/config.ts`); never hardcode a
   home directory.
-- **`logs/` is committed and the repo is public.** The engine's startup output contains the Steam
-  account id and absolute home-directory paths, so `redact()` in `src/play.ts` strips both as each
-  session is written. If you add another capture path, redact there too — cleaning it up afterwards
-  only works if someone remembers.
+- **`logs/` is gitignored, but keep redacting anyway.** The engine's startup output contains the
+  Steam account id and absolute home-directory paths, so `redact()` in `src/play.ts` strips both as
+  each session is written. If you add another capture path, redact there too. The repo is public and
+  a few early sessions are still tracked as sample data, so redaction cannot be treated as optional
+  just because new captures stay local — cleaning it up afterwards only works if someone remembers.
 - **No AI attribution** anywhere: no `Co-Authored-By` trailers, no "generated with" footers, no
   tool-credit lines in code, docs, or commits.
 - Every path in `src/config.ts` can be overridden by an environment variable.

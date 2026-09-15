@@ -3,4 +3,10 @@ events.db
 events.db-shm
 events.db-wal
 
+# Session captures stay local. They are large - a long session runs to several
+# megabytes - and they accumulate with every play. The handful committed before
+# this rule remain tracked as sample data, so `deno task import` has something
+# to work on in a fresh clone.
+logs/*.log
+
 .DS_Store
