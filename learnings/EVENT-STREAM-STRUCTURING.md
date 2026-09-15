@@ -61,6 +61,34 @@ aren't really — and the report had to be extended to cover it too.
 > A catch-all with a respectable name is more dangerous than one called `other`, because nobody thinks
 > to audit it.
 
+A measure of how much a catch-all attracts: by the end, that `status` bucket held ~5,200 rows, and
+**~2,100 of them were one character toggling a single skill on and off.** Nothing about that is
+interesting, and it buried everything that was.
+
+### Tests written from your model only confirm your model
+
+The most expensive hour of this project: a later feature reached **37 passing tests** — every rule,
+every edge case, all green — and the first run against the real corpus produced obvious garbage. An
+engine broadcast appearing as a creature named `Your journal has been updated`. Thousands of rows of
+skill chatter. A whole line of dialogue sitting in the output as though it were a status effect.
+
+Six distinct bugs, and the tests could not have caught any of them, because **the tests and the code
+were written from the same mental model of the data.** Both were internally consistent. Both were
+wrong in the same places.
+
+The two are not substitutes:
+
+- **Real data finds the cases you did not imagine.** It is the only thing that can.
+- **Tests stop the cases you already found from coming back.** Real data cannot do that, because the
+  next capture is different.
+
+So the order matters. Run against real data first, and turn each thing it exposes into a test — those
+are the tests worth having, because each one is a bug that actually happened. The synthetic cases
+written up front mostly restate the implementation in a second notation.
+
+> Green tests mean "consistent with what I expected". Nothing more. Ask what would have to be true of
+> the real data for these to pass *and* the output still be wrong.
+
 ---
 
 ## 3. Find the envelope, strip it, then classify
@@ -193,6 +221,43 @@ and target when it sees one.
 The check that catches this class of bug is semantic, not syntactic. Not "did it parse" but **"does
 `GROUP BY actor` now mean what I'd say out loud?"** Ask that of every derived relation.
 
+### Ownership is per message form, not per stream
+
+The trap is thinking you solve this once. A later pass over the same stream found **three different
+ownership rules coexisting**, plus a fourth case with no owner in the text at all:
+
+| form | who the fact belongs to |
+|---|---|
+| `<Actor>: Casts <thing> : <target>` | the target |
+| `<Actor>: <Effect> : <target>` | the target — *not* the speaker, though the speaker caused it |
+| `<Actor>: <bare effect name>` | the speaker |
+| `<Actor>: Weapon Ineffective.` | **nobody named** — has to be correlated with the actor's last action |
+
+The third and fourth are the dangerous ones. A bare name belongs to the speaker while the
+colon-separated form belongs to the target, and the two look nearly identical. And the last form
+reports a fact about a participant it never mentions, so it needs the join-key machinery from §5 just
+to know *who* it is about.
+
+> Ask the ownership question per form, not per stream. Same source, same session, different answers —
+> and a form that names nobody is not an error, it is a correlation problem.
+
+### Rank your evidence by how directly it observed the thing
+
+When several forms report the same fact, they are not equally good. Here they sorted naturally:
+
+1. **A cast aimed at someone** — intent. It may be resisted, blocked, or land on nobody.
+2. **An effect printed on someone** — it landed.
+3. **A probe**: an action that failed *because* of the state. `Weapon Ineffective` proves a protection
+   is up **right now**, which nothing else in the stream does.
+
+Keeping the strongest and showing which one it was does two things: the data gets better, and the
+reader can discount a weak signal instead of being handed a single confidence-free assertion. Ties go
+to the more recent sighting, which is what makes an age meaningful.
+
+The general shape: **when the same fact arrives by several routes, rank the routes by directness of
+observation, keep the best, and surface which route it came from.** Inference that hides its own
+provenance cannot be audited.
+
 ---
 
 ## 7. Exclude the near-miss that looks identical
@@ -232,6 +297,62 @@ total confidence. Physical damage types are weapon hits and must never be attrib
 
 > A wrong attribution is worse than a blank one. A blank is visibly missing; a wrong one is invisible
 > and gets aggregated.
+
+### Mark the parts that did not come from the data
+
+Eventually the model needs something the stream cannot supply. Here it was *meaning*: the log says a
+spell was cast, but not whether that spell protects, disables, or does nothing lasting. That has to
+come from outside — documentation, or knowing the domain.
+
+Keep it in one place and **say plainly that it is not derived**. The table in this project opens with
+"DOMAIN KNOWLEDGE, NOT LOG-DERIVED", because every other claim in the system is traceable to a
+captured line and this one is not. Same file, different standard of evidence, and a reader deserves
+to know which they are looking at.
+
+Three properties make such a table safe to rely on:
+
+- **Unknown entries degrade to visible, not absent.** A name with no semantics is still shown, just
+  uncategorized. Dropping it would hide real state; guessing at it would invent state.
+- **Coverage is reported.** A count of how many observed names have semantics turns an invisible
+  blind spot into a number that can be watched, and the unmapped list is the work queue.
+- **Verdicts are recorded, not just gaps.** Without somewhere to write "judged, and deliberately
+  left out", the queue never shrinks: every run re-lists the same high-frequency names that will
+  never be added, and the genuinely undecided entries stay buried underneath them. A two-occurrence
+  name that *is* real state is invisible below a hundred occurrences of one that never will be.
+
+  Keep that list's scope narrow, though. "I know what this is and it isn't interesting" is a
+  statement about the *backlog*, not about the display — the two are easy to conflate because both
+  sound like "not relevant". Suppressing a name from the report is cheap and reversible;
+  suppressing it from the output destroys information the viewer might have wanted. Separate
+  lists, separate decisions.
+
+The corollary is worth stating: most of that gap was correct. Attack spells *should* have no
+semantics. **Low coverage is not automatically a deficit** — only the report plus judgment can say.
+
+### Measure the display, not your model of it
+
+The coverage report above had a blind spot for its entire existence, and the shape of the mistake
+generalizes further than the table does.
+
+It was written as its own query: *names appearing in these three event kinds, where the name column
+is populated.* That reads like a faithful description of what the display shows. It was not. The
+display also derived names from a fourth, catch-all kind, where the name is parsed out of raw text
+and the name column is always null — thousands of rows the report could not see by construction. A
+removal event sat untagged on screen through every single run without once being listed as missing.
+
+Nothing about the report looked wrong. Its numbers were plausible, its list was populated, and it
+was measuring a set that merely resembled the one on screen.
+
+**The fix was to delete the query and call the display's own function**, then count what came back
+uncategorized. Coverage went from "42 of 169 names" — a number about a SQL query — to "169 of 234
+observations, 12 names left to judge", a number about the screen. The list stopped being mostly
+noise, and it immediately surfaced two real defects that had been invisible: a protection whose
+spell was in the table but whose *effect message* was not, and a text-encoding corruption in the
+capture itself.
+
+The rule: **a completeness report must share a code path with the thing it reports on.** If it
+re-derives its own version of "what we show", it will drift, and it will drift silently — a report
+that agrees with your model instead of your output is worse than no report, because it is trusted.
 
 ### The auditing trick
 

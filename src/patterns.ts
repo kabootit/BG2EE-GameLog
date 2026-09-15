@@ -7,7 +7,9 @@
  * better rules - look at the most frequent unmatched text, add a rule, then
  * `deno task import` to re-classify without replaying.
  */
-import { openDb } from "./db.ts";
+import { type Db, openDb } from "./db.ts";
+import { isDeclined } from "./protections.ts";
+import { type EventRow, foldCombatants } from "./combatants.ts";
 
 function main() {
   const db = openDb();
@@ -89,8 +91,80 @@ function main() {
     );
   }
 
+  reportProtectionCoverage(db, limit);
+
   console.log(`\nAdd rules to src/parse.ts, then: deno task import`);
   db.close();
+}
+
+/**
+ * Which names the combatants view is showing without semantics.
+ *
+ * `src/protections.ts` is domain knowledge rather than log-derived, so it cannot
+ * be complete — IWDification alone adds 65+ spells. This is how the gap stays
+ * visible instead of silently shrinking the inspector's coverage.
+ *
+ * Driven by the fold, not by its own SQL. That distinction is the whole point:
+ * an earlier version queried `detail` on kinds 'spell', 'cast_start' and
+ * 'effect', which sounds equivalent and is not. Observations also come from the
+ * `status` bucket, where the name lives in the raw text and `detail` is always
+ * null — 5,230 such rows, none of them ever reported. "Spell Protections
+ * Removed" sat untagged on screen through every run of this report without once
+ * being listed as missing. Asking the fold what it produced makes the report and
+ * the UI agree by construction.
+ *
+ * Not every unmapped name should be added: Magic Missile never will be. The
+ * report lists candidates; judgment decides, and DECLINED records the verdict
+ * so the queue shrinks instead of re-listing the same 100 names forever.
+ */
+function reportProtectionCoverage(db: Db, limit: number) {
+  const sessions = (db.prepare(`SELECT DISTINCT session FROM events`).all() as Array<
+    { session: string }
+  >).map((s) => s.session);
+
+  const rows = db.prepare(
+    `SELECT id, kind, actor, target, detail, raw, game_ticks, clock_ms,
+            actor_side, target_side, summon, target_summon
+       FROM events WHERE session = ? ORDER BY id`,
+  );
+
+  // Per session, matching how the view scopes itself — a fold across session
+  // boundaries would merge creatures that never met.
+  const tally = new Map<string, number>();
+  let shown = 0;
+  for (const session of sessions) {
+    const { combatants } = foldCombatants(rows.all(session) as unknown as EventRow[]);
+    for (const c of combatants) {
+      for (const o of c.observations) {
+        shown++;
+        if (o.category === "unknown") tally.set(o.name, (tally.get(o.name) ?? 0) + 1);
+      }
+    }
+  }
+
+  const undecided = [...tally]
+    .filter(([name]) => !isDeclined(name))
+    .sort((a, b) => b[1] - a[1]);
+  const declined = tally.size - undecided.length;
+
+  console.log(
+    `\nProtection coverage: ${shown - [...tally.values()].reduce((a, b) => a + b, 0)}/${shown} ` +
+      `observations the combatants view would show are categorized`,
+  );
+  console.log(
+    `  ${tally.size} distinct names have no entry in src/protections.ts ` +
+      `(${declined} of them declined, ${undecided.length} still to judge)`,
+  );
+
+  if (undecided.length > 0) {
+    console.log(`\n  Untagged on screen — add to TABLE, or to DECLINED if not state:\n`);
+    for (const [name, n] of undecided.slice(0, limit)) {
+      console.log(`  ${String(n).padStart(5)}  ${name}`);
+    }
+    if (undecided.length > limit) {
+      console.log(`  ... and ${undecided.length - limit} more`);
+    }
+  }
 }
 
 if (import.meta.main) main();

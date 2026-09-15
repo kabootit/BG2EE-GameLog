@@ -3,82 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BG2EE game log</title>
-<style>
-  :root {
-    color-scheme: light dark;
-    --bg: #fbfaf7;
-    --panel: #ffffff;
-    --border: #e2ded4;
-    --text: #23201b;
-    --muted: #6f6a60;
-    --accent: #8a5a2b;
-    --row: #f5f2ec;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #17161a;
-      --panel: #1f1e23;
-      --border: #34323a;
-      --text: #e8e5df;
-      --muted: #9a958c;
-      --accent: #d0a06a;
-      --row: #26242b;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    padding: 1.25rem;
-    background: var(--bg);
-    color: var(--text);
-    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
-  }
-  h1 { font-size: 1.05rem; margin: 0 0 .9rem; font-weight: 600; letter-spacing: .01em; }
-  h1 span { color: var(--muted); font-weight: 400; }
-  .controls {
-    display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 8px; padding: .7rem; margin-bottom: .9rem;
-  }
-  label { color: var(--muted); font-size: .82rem; }
-  select, input, button {
-    font: inherit; color: var(--text); background: var(--bg);
-    border: 1px solid var(--border); border-radius: 6px; padding: .3rem .5rem;
-  }
-  input[type=search] { min-width: 15rem; }
-  button { cursor: pointer; }
-  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-  button:disabled { opacity: .45; cursor: default; }
-  .sortmark { color: var(--accent); font-variant-numeric: tabular-nums; }
-  .spacer { flex: 1; }
-  .status { color: var(--muted); font-size: .82rem; }
-  .wrap {
-    overflow-x: auto; background: var(--panel);
-    border: 1px solid var(--border); border-radius: 8px;
-  }
-  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
-  th, td {
-    text-align: left; padding: .4rem .6rem;
-    border-bottom: 1px solid var(--border); white-space: nowrap;
-  }
-  th { position: sticky; top: 0; background: var(--panel); font-weight: 600; }
-  th[data-sort] { cursor: pointer; user-select: none; }
-  th[data-sort]:hover { color: var(--accent); }
-  tbody tr:nth-child(even) { background: var(--row); }
-  td.raw { white-space: normal; min-width: 24rem; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .kind {
-    display: inline-block; padding: 0 .4rem; border-radius: 4px;
-    background: var(--row); border: 1px solid var(--border); font-size: .78rem;
-  }
-  .flag { color: var(--accent); font-weight: 600; }
-  .empty { padding: 2rem; text-align: center; color: var(--muted); }
-</style>
+<title>BG2EE game log — events</title>
+<link rel="stylesheet" href="/app.css">
 </head>
 <body>
 
 <h1>BG2EE game log <span id="subtitle"></span></h1>
+
+<nav class="tabs" aria-label="view">
+  <a class="tab" data-path="/events" href="/events" aria-current="page">events</a>
+  <a class="tab" data-path="/combatants" href="/combatants">combatants</a>
+</nav>
 
 <div class="controls">
   <label>session <select id="session"><option value="">all</option></select></label>
@@ -109,19 +44,14 @@
 <div class="wrap"><table><thead id="head"></thead><tbody id="body"></tbody></table></div>
 
 <!-- type="module" is required: this script uses top-level await, which is a
-     syntax error in a classic script and silently prevents the whole block
-     from parsing, leaving the page rendered but completely inert. -->
+     syntax error in a classic script and silently prevents the whole block from
+     parsing, leaving the page rendered but completely inert. -->
 <script type="module">
-const $ = (id) => document.getElementById(id);
+import { $, esc, fillSelect, initShell, setStatus } from "/common.js";
 
-// Every value rendered here originates in game text. Quotes are escaped too,
-// because some of it lands in attributes rather than text nodes.
-const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ESCAPES[c]);
 /** Sort keys, most significant first. Click a header to add, cycle, then drop it. */
 const state = { sort: [], offset: 0, limit: 500 };
 const MAX_SORT_KEYS = 4;
-let timer = null;
 
 const EVENT_COLUMNS = [
   { key: "id",         label: "#",      num: true },
@@ -243,7 +173,8 @@ function cell(column, row) {
 
 function renderRows(columns, rows) {
   if (rows.length === 0) {
-    $("body").innerHTML = `<tr><td class="empty" colspan="${columns.length}">no matching events</td></tr>`;
+    $("body").innerHTML =
+      `<tr><td class="empty" colspan="${columns.length}">no matching events</td></tr>`;
     return;
   }
   $("body").innerHTML = rows
@@ -251,7 +182,14 @@ function renderRows(columns, rows) {
     .join("");
 }
 
+/** The kind facet is scoped by the other filters, so it reloads with the rows. */
+async function loadKinds() {
+  const data = await (await fetch("/api/facets?" + params())).json();
+  fillSelect("kind", data.kinds, "all kinds");
+}
+
 async function load() {
+  await loadKinds();
   const groupBy = $("groupby").value;
   const p = params();
 
@@ -260,7 +198,7 @@ async function load() {
     const data = await (await fetch("/api/groups?" + p)).json();
     renderHead(GROUP_COLUMNS, false);
     renderRows(GROUP_COLUMNS, data.rows);
-    $("status").textContent = `${data.rows.length} groups by ${groupBy}`;
+    setStatus(`${data.rows.length} groups by ${groupBy}`);
     return;
   }
 
@@ -270,44 +208,12 @@ async function load() {
   p.set("limit", state.limit);
   p.set("offset", state.offset);
   const data = await (await fetch("/api/events?" + p)).json();
-  // "battle only" narrows the columns as well as the rows: the timing columns are
-  // for correlating against the raw log, not for reading a fight.
   const columns = visibleColumns();
   renderHead(columns, true);
   renderRows(columns, data.rows);
 
   const from = data.total === 0 ? 0 : data.offset + 1;
-  const to = data.offset + data.rows.length;
-  $("status").textContent = `${from}–${to} of ${data.total}`;
-}
-
-async function loadFacets() {
-  // Send the active filters: each facet's counts are scoped by every other
-  // filter, so the kind counts reflect the selected session.
-  const data = await (await fetch("/api/facets?" + params())).json();
-
-  const fill = (id, rows, allLabel) => {
-    const select = $(id);
-    const current = select.value;
-    const options = rows.map((r) => `<option value="${esc(r.key)}">${esc(r.key)} (${r.n})</option>`);
-    // Keep the active selection listed even when the other filters reduce it to
-    // zero, or the <select> silently falls back to "all" and the results change.
-    if (current && !rows.some((r) => String(r.key) === current)) {
-      options.unshift(`<option value="${esc(current)}">${esc(current)} (0)</option>`);
-    }
-    select.innerHTML = `<option value="">${esc(allLabel)}</option>` + options.join("");
-    select.value = current;
-  };
-
-  fill("session", data.sessions, "all sessions");
-  fill("kind", data.kinds, "all kinds");
-  $("subtitle").textContent = `— ${data.total} events total, ${data.sessions.length} session(s)`;
-}
-
-/** Filters changed: facet counts and rows both need reloading. */
-async function refresh() {
-  await loadFacets();
-  await load();
+  setStatus(`${from}–${data.offset + data.rows.length} of ${data.total}`);
 }
 
 let debounce = null;
@@ -315,41 +221,38 @@ $("q").oninput = () => {
   clearTimeout(debounce);
   debounce = setTimeout(() => {
     state.offset = 0;
-    refresh();
+    load();
   }, 200);
 };
-for (const id of ["session", "kind", "groupby"]) {
+
+for (const id of ["kind", "groupby"]) {
   $(id).onchange = () => {
     state.offset = 0;
-    refresh();
+    load();
   };
 }
+
 $("battle").onchange = () => {
-  // Turning the scope on while a now-hidden kind is selected would leave the
-  // two controls contradicting each other and the table empty. Drop the
-  // selection instead.
+  // Turning the scope on while a now-hidden kind is selected would leave the two
+  // controls contradicting each other and the table empty. Drop the selection.
   if ($("battle").checked) {
     if (HIDDEN_KINDS.includes($("kind").value)) $("kind").value = "";
-    // A sort on a column that is about to disappear would keep applying with no
-    // header left to see it on or click it off.
+    // A sort on a column about to disappear would keep applying with no header
+    // left to see it on or click it off.
     const hidden = new Set(EVENT_COLUMNS.filter((c) => c.verbose).map((c) => c.key));
     state.sort = state.sort.filter((s) => !hidden.has(s.key));
   }
   state.offset = 0;
-  refresh();
+  load();
 };
+
 $("clearsort").onclick = () => {
   state.sort = [];
   state.offset = 0;
   load();
 };
-$("refresh").onclick = refresh;
-$("auto").onchange = (e) => {
-  clearInterval(timer);
-  if (e.target.checked) timer = setInterval(refresh, 3000);
-};
 
-await refresh();
+await initShell(load);
 </script>
 </body>
 </html>

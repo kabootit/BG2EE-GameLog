@@ -11,6 +11,14 @@ export type Kind =
   | "gold"
   | "save"
   | "spell"
+  /** cdtweaks Explicit Cast Warnings announces a cast by name before it lands. */
+  | "cast_start"
+  /**
+   * An attack proved a protection is up: "Weapon Ineffective", "X was immune to
+   * my damage". The strongest evidence available, because unlike a cast it
+   * reports what is true *now*.
+   */
+  | "immune"
   | "miscast"
   | "effect"
   | "status"
@@ -109,8 +117,16 @@ export function stripColor(s: string): string {
  */
 const SPEAKER = /^(?<speaker>[A-Za-z][A-Za-z'\- ]{0,29}):\s*(?<rest>.+)$/;
 
-/** Prose ends in sentence punctuation; engine status text ("Contingency Active") does not. */
-const SENTENCE = /[.!?]["')\]]?$/;
+/**
+ * Prose ends in sentence punctuation; engine status text ("Contingency Active")
+ * does not.
+ *
+ * Includes the em dash, en dash and ellipsis: BG2 dialogue is frequently
+ * interrupted mid-sentence ("Excuse my dull and graceless talk, but—"), and
+ * without them such a line falls through to `status` and then reads as an
+ * effect name to anything consuming that bucket.
+ */
+const SENTENCE = /[.!?—–…]["')\]]?$/;
 
 /**
  * Emitted by the tap when it loses its place and resyncs. Its own kind rather
@@ -131,7 +147,7 @@ const RESYNC = /^capture resynced\b/i;
  * has no speaker, "status" when it does. Run `deno task patterns` to see both
  * buckets, add rules, then `deno task import` to re-classify without replaying.
  */
-const RULES: Array<{ kind: Kind; re: RegExp }> = [
+const RULES: Array<{ kind: Kind; re: RegExp; detail?: string }> = [
   { kind: "pause", re: /^(?:UN)?PAUSED$/i },
   { kind: "pause", re: /^Auto-?Paused\s*:\s*(?<detail>.+)$/i },
 
@@ -156,6 +172,20 @@ const RULES: Array<{ kind: Kind; re: RegExp }> = [
     kind: "damage",
     re: /^(?:takes?|suffers?|receives?)\s+(?<amount>\d+)\s+(?:points?\s+of\s+)?damage\b/i,
   },
+
+  // An attack that connected but could not hurt the target, which means the
+  // target has a protection up right now. Two forms, and they differ in a way
+  // that matters: this one names the protected creature, so `target` is captured
+  // and the speaker stays the attacker.
+  {
+    kind: "immune",
+    re: /^(?<target>.+?)\s+was\s+immune\s+to\s+my\s+damage\b/i,
+    detail: "damage",
+  },
+  // This one does NOT name anyone — "Korgan: Weapon Ineffective." — so the
+  // protected creature has to be correlated from the speaker's most recent
+  // attack. EventLinker fills in `target`; see ATTACK_TARGET_WINDOW.
+  { kind: "immune", re: /^Weapon\s+Ineffective\b/i, detail: "weapon" },
 
   // "Attack Roll 6 + 16 = 22 : Hit" -> amount is the total, detail is Hit/Miss.
   {
@@ -185,6 +215,25 @@ const RULES: Array<{ kind: Kind; re: RegExp }> = [
   // Leading \b matters: without it, "dies" matches inside "bodies".
   { kind: "death", re: /\b(?:has\s+died|has\s+been\s+killed|is\s+dead|dies|slain)\b/i },
 
+  // "Casting Mirror Image..." - cdtweaks announces the cast before it resolves,
+  // so this is the earliest warning of an incoming buff and it names the spell.
+  // Must precede the `Casts` rules: they don't match "Casting", but the intent
+  // is clearer with the announcement first.
+  { kind: "cast_start", re: /^Casting\s+(?<detail>.+?)\s*\.{2,}$/i },
+  // A second announcement form: "is Casting Heal", "is Casting Improved
+  // Invisibility : Anomen". Without this it reaches the generic `effect` rule
+  // and shows up as a landed effect literally named "is Casting Heal".
+  //
+  // Split in two rather than one rule with an optional target group, because the
+  // spell name may be *absent*: the engine does print "Cernd: is Casting : Cat",
+  // 29 such rows in 61k. With the target group optional, the lazy `detail`
+  // swallowed the separator and invented a spell called ": Cat", which then read
+  // as "casting : Cat…" on a card and padded the coverage report with names that
+  // were never spells. `[^:]*` here allows the empty name; `clean()` turns it
+  // into a null detail, leaving just the target, which is all the engine gave us.
+  { kind: "cast_start", re: /^is\s+Casting\s*(?<detail>[^:]*?)\s*:\s*(?<target>.+)$/i },
+  { kind: "cast_start", re: /^is\s+Casting\s+(?<detail>.+)$/i },
+
   // "Casts Magic Missile : Vampire" - the cast names its primary target, so
   // split it off rather than leaving it glued to the spell name.
   { kind: "spell", re: /^Casts?\s+(?<detail>.+?)\s+:\s+(?<target>.+)$/i },
@@ -199,9 +248,15 @@ const RULES: Array<{ kind: Kind; re: RegExp }> = [
   { kind: "loot", re: /\byou\s+(?:found|acquired|received|obtained)\b/i },
   { kind: "party", re: /\bgather\s+your\s+party\b|\bjoined\s+the\s+party\b/i },
 
-  // "Enrage : Tyras", "Stoneskin : Gaul" - an effect applied to someone.
+  // "Enrage : Tyras", "Stoneskin : Gaul", "Domination : Rurik" - an effect
+  // applied to someone. The name goes in `detail` and the recipient in `target`:
+  // the speaker is whoever caused it, which for a self-buff is the same creature
+  // but for "Vampire: Domination : Rurik" is not.
   // Last, so more specific colon-separated forms above win first.
-  { kind: "effect", re: /^[A-Za-z][A-Za-z'\- ]{0,30}?\s+:\s+(?<target>.+)$/ },
+  {
+    kind: "effect",
+    re: /^(?<detail>[A-Za-z][A-Za-z'\- ]{0,30}?)\s+:\s+(?<target>.+)$/,
+  },
 ];
 
 function toInt(v: string | undefined): number | null {
@@ -233,7 +288,7 @@ export function classify(text: string): Classified {
   const actor = clean(speaker?.groups?.speaker);
   const body = speaker?.groups?.rest ?? text;
 
-  for (const { kind, re } of RULES) {
+  for (const { kind, re, detail: fixedDetail } of RULES) {
     const m = re.exec(body);
     if (m) {
       const g = m.groups ?? {};
@@ -248,7 +303,9 @@ export function classify(text: string): Classified {
         amount: toInt(g.amount),
         roll: toInt(g.roll),
         resisted: toInt(g.resisted),
-        detail: clean(g.detail),
+        // A captured group wins; a rule-level literal is the fallback, so probe
+        // results can say what was blocked when the text itself doesn't.
+        detail: clean(g.detail) ?? fixedDetail ?? null,
       };
     }
   }
@@ -497,15 +554,38 @@ export class EventLinker {
   /** A crit resolves almost immediately; a spell's damage can lag well behind. */
   private static readonly CRIT_WINDOW = 10;
   private static readonly SPELL_WINDOW = 60;
+  /** "Weapon Ineffective" follows its own attack within a few lines. */
+  private static readonly ATTACK_TARGET_WINDOW = 12;
 
   private pendingCrit = new Map<string, number>();
   private lastCast = new Map<string, { id: number; spell: string }>();
+  private lastAttack = new Map<string, { id: number; target: string }>();
 
   apply(event: GameEvent): GameEvent {
     if (event.actor === null) return event;
 
     if (event.kind === "critical") {
       if (/^Hit$/i.test(event.detail ?? "")) this.pendingCrit.set(event.actor, event.id);
+      return event;
+    }
+
+    // Remember who this actor last swung at, so an immunity message that names
+    // nobody can be attributed. Not consumed: one declared attack can produce
+    // several swings, each able to report ineffective.
+    if (event.kind === "attack" && event.target !== null) {
+      this.lastAttack.set(event.actor, { id: event.id, target: event.target });
+      return event;
+    }
+
+    // "Korgan: Weapon Ineffective." proves a protection is up on whoever Korgan
+    // was attacking, but the line does not say who that was. The other form
+    // ("X was immune to my damage") names them, so it already has a target and
+    // must not be overwritten.
+    if (event.kind === "immune" && event.target === null) {
+      const attack = this.lastAttack.get(event.actor);
+      if (attack !== undefined && event.id - attack.id <= EventLinker.ATTACK_TARGET_WINDOW) {
+        return { ...event, target: attack.target };
+      }
       return event;
     }
 

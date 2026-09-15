@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BG2EE game log — combatants</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<h1>BG2EE game log <span id="subtitle"></span></h1>
+
+<nav class="tabs" aria-label="view">
+  <a class="tab" data-path="/events" href="/events">events</a>
+  <a class="tab" data-path="/combatants" href="/combatants" aria-current="page">combatants</a>
+</nav>
+
+<div class="controls">
+  <!-- Only the session and the window apply here. A kind filter would starve the
+       fold of the very rows it reads state from, so it is not offered. -->
+  <label>session <select id="session"><option value="">all</option></select></label>
+  <!-- Offsets back from the newest event, not log ids: 0 is now, 400 is four
+       hundred events ago. Literal values so the controls are never blank, even
+       before the first fetch resolves. -->
+  <label>events <input type="number" id="from" value="0" min="0" step="10"></label>
+  <label>to <input type="number" id="to" value="400" min="0" step="10"></label>
+  <span class="hint" id="bounds">back</span>
+  <button id="latest" title="back to the most recent events">latest</button>
+  <div class="spacer"></div>
+  <label><input type="checkbox" id="auto"> auto-refresh</label>
+  <button id="refresh">refresh</button>
+</div>
+
+<div class="status" id="status"></div>
+<div id="combatants"></div>
+
+<script type="module">
+import { $, esc, initShell, setStatus } from "/common.js";
+
+/**
+ * Anything older than this is dimmed as probably gone. A presentation hint, not
+ * a claim: the game never announces an effect ending, so this cannot be known.
+ * Roughly a minute of real time.
+ */
+const STALE_MS = 60_000;
+
+/** Age relative to the newest event folded, in real seconds. */
+function ageOf(obs, latestClockMs) {
+  if (obs.clockMs === null || latestClockMs === null) return { text: "", stale: false };
+  const ms = Math.max(0, latestClockMs - obs.clockMs);
+  const s = Math.round(ms / 1000);
+  return { text: s < 60 ? `${s}s ago` : `${Math.round(s / 60)}m ago`, stale: ms > STALE_MS };
+}
+
+/** Where the observation came from, worst to best — shown so it can be judged. */
+const SOURCE_LABEL = {
+  cast: "cast at them",
+  effect: "effect seen",
+  probe: "confirmed by attack",
+};
+
+function combatantCard(c, latestClockMs) {
+  const meta = [c.side, c.isSummon ? "summon" : null, c.diedAtId !== null ? "dead" : null]
+    .filter(Boolean).join(" · ");
+
+  const items = c.observations.map((o) => {
+    const { text, stale } = ageOf(o, latestClockMs);
+    const tag = o.category === "unknown"
+      ? ""
+      : `<span class="tag ${esc(o.category)}">${esc(o.category)}</span>`;
+    return `<li class="${stale ? "stale" : ""}">` +
+      `${tag}<span>${esc(o.name)}</span>` +
+      `<span class="age" title="${esc(SOURCE_LABEL[o.source] ?? o.source)}">${esc(text)}</span></li>`;
+  }).join("");
+
+  // Only the most useful counter, to keep a card scannable.
+  const counter = c.observations.find((o) => o.counter);
+
+  return `<div class="card ${c.diedAtId !== null ? "gone" : ""}">` +
+    `<h3>${esc(c.name)}${meta ? `<span class="meta">${esc(meta)}</span>` : ""}</h3>` +
+    (c.casting ? `<p class="casting">casting ${esc(c.casting)}…</p>` : "") +
+    (items ? `<ul class="obs">${items}</ul>` : `<p class="counter">nothing observed</p>`) +
+    (counter ? `<p class="counter">${esc(counter.name)}: ${esc(counter.counter)}</p>` : "") +
+    `</div>`;
+}
+
+/**
+ * True while the user is mid-edit, so a reload does not overwrite what they are
+ * typing. On the first load, and after switching session, the inputs are filled
+ * from whatever the server actually used.
+ */
+let rangeTouched = false;
+
+/** How far back the current session reaches, from the last response. */
+let maxBack = 0;
+
+async function load() {
+  const p = new URLSearchParams();
+  if ($("session").value) p.set("session", $("session").value);
+  // Empty means "unset" — the server then picks the trailing default.
+  if ($("from").value) p.set("from", $("from").value);
+  if ($("to").value) p.set("to", $("to").value);
+  const data = await (await fetch("/api/combatants?" + p)).json();
+
+  maxBack = data.maxBack;
+  if (data.bounds !== null) {
+    // The inputs are ages, so they run from 0 to however far back the session
+    // goes — no knowledge of the absolute id space needed.
+    for (const id of ["from", "to"]) {
+      $(id).min = 0;
+      $(id).max = data.maxBack;
+    }
+    $("bounds").textContent = `back (max ${data.maxBack})`;
+    // Reflect what the server used, including any clamping — unless the user is
+    // part-way through typing a number.
+    if (!rangeTouched) {
+      $("from").value = data.from;
+      $("to").value = data.to;
+    }
+  } else {
+    $("bounds").textContent = "back";
+  }
+
+  const sections = [
+    ["opponents", data.opponents],
+    ["party", data.party],
+    ["other", data.neutral],
+  ].filter(([, list]) => list.length > 0);
+
+  const html = sections.map(([label, list]) =>
+    `<div class="side"><h2>${esc(label)} (${list.length})</h2><div class="cgrid">` +
+    list.map((c) => combatantCard(c, data.latestClockMs)).join("") +
+    `</div></div>`
+  ).join("");
+
+  $("combatants").innerHTML =
+    `<p class="note">Observations with their age, not live state — the game never announces an ` +
+    `effect ending, so nothing here claims to still be active. Hover an age for how it was learned. ` +
+    `Identical creature names are merged: the engine exposes no per-creature identity.</p>` +
+    (html || `<p class="empty">nothing observed in this window</p>`);
+
+  if (data.session === null) {
+    setStatus("no sessions captured yet");
+    return;
+  }
+  // Name the session and the slice. "0-400" alone is ambiguous, so say whether
+  // it reaches the present, and give the ids for cross-referencing the events
+  // table — which is keyed on id, not on age.
+  const total = data.opponents.length + data.party.length + data.neutral.length;
+  const slice = data.from === 0
+    ? `the last ${data.folded} events`
+    : `events ${data.from}–${data.to} back`;
+  const whole = data.folded === data.sessionTotal ? ", the whole session" : "";
+  setStatus(
+    `${total} combatants — ${data.session}, ${slice} ` +
+      `(ids ${data.fromId}–${data.toId}${whole})`,
+  );
+}
+
+// Debounced: typing "1200" would otherwise fire on every digit, and each pass
+// would clamp the half-typed number.
+let rangeDebounce = null;
+for (const id of ["from", "to"]) {
+  $(id).oninput = () => {
+    rangeTouched = true;
+    clearTimeout(rangeDebounce);
+    rangeDebounce = setTimeout(async () => {
+      await load();
+      // Editing is finished; let the next reload re-sync from the server.
+      rangeTouched = false;
+    }, 400);
+  };
+}
+
+/** Snap the near end back to now, keeping however wide a span is showing. */
+$("latest").onclick = () => {
+  const span = Math.max(1, Number($("to").value) - Number($("from").value));
+  $("from").value = 0;
+  $("to").value = Math.min(span, maxBack);
+  rangeTouched = false;
+  load();
+};
+
+/**
+ * A different session has a different id range, so the old one cannot carry. A
+ * plain refresh or an auto-refresh tick must keep it, though — resetting on
+ * every tick would make a chosen range impossible to hold.
+ */
+const reload = ({ sessionChanged } = {}) => {
+  if (sessionChanged) {
+    // Blank falls back to the new session's own start, whatever its ids are.
+    // Not done on first load: the markup already carries the defaults, and
+    // blanking them would flash empty inputs before the fetch returns.
+    rangeTouched = false;
+    $("from").value = "";
+    $("to").value = "";
+  }
+  return load();
+};
+
+await initShell(reload);
+</script>
+</body>
+</html>

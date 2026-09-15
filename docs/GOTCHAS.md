@@ -233,6 +233,40 @@ produces a confusing `SyntaxError` far from the cause. Pass paths through an env
 
 ---
 
+### 13b. `Temporal` has no formatting API — don't round-trip through its ISO string
+
+`Temporal` is a global in Deno 2.9.6 with no unstable flag and built-in types, so it replaces both
+`Date` and `@std/datetime`. But its entire formatting surface is:
+
+- `toString()` — ISO 8601 only, no pattern argument
+- `toLocaleString()` — goes through `Intl`, so locale dependent (`9/14/2026, 6:41:05 PM` here)
+
+Custom patterns were deliberately left out of the proposal. For a fixed-width machine-readable stamp,
+`toLocaleString()` is unusable — a filename must not change with the user's locale — so that leaves
+reading the fields.
+
+The first attempt formatted the ISO string instead:
+
+```ts
+now.toString({ smallestUnit: "second" }).replace(/[-:]/g, "").replace("T", "-")
+```
+
+That serializes structured data to text and then takes the text apart with pattern matching, when
+`now.month` is already a number. Direct field access with `padStart` is shorter, has no regex, and
+states the fixed-width requirement outright.
+
+> When a value is already structured, format *from the fields*. Reaching for a regex on its
+> serialized form means you went one step too far and came back.
+
+### 13c. `classify()` expects a full `Speaker: body` line
+
+It strips a speaker prefix before matching, so calling it on a bare body silently misclassifies:
+`classify("Roll:13 +Luck:0 …")` takes `Roll` as the speaker and matches nothing useful.
+
+This made five newly written tests wrong rather than the code — worth knowing before debugging a rule
+that "doesn't work". Pass realistic whole lines, which is what `parseLine()` always does in
+production.
+
 ## Browser
 
 ### 14. Top-level `await` in a classic `<script>` kills the entire block, silently

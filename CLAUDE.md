@@ -6,13 +6,39 @@ SQLite database with a local web viewer, so the event stream can be sorted, sear
 ## Toolchain
 
 **Use Deno for everything** — tooling, scripts, servers, one-off tasks. All entry points go through
-`deno task`. Prefer the standard library and built-in modules (`node:sqlite`, `Deno.serve`,
-`Deno.Command`) over third-party packages. This project currently has **zero dependencies**; keep it
-that way unless there is a concrete reason not to.
+`deno task`.
 
-**Do not use Python. Do not write shell scripts (`.sh`).** Calling a system binary from
-`Deno.Command` is fine — `src/play.ts` invokes `script` because Deno has no pty support and without a
-pty the game's stdout block-buffers at 4 KB — but the orchestration lives in TypeScript.
+**Imports are limited to Deno built-ins (`node:sqlite`, `Deno.*`) and the Deno standard library
+(`jsr:@std/*`), with a pinned major version.** No npm, no other jsr scope, no raw URLs. Prefer `@std`
+over hand-rolling: it replaced a manual line buffer, a recursive hex encoder, and a date formatter
+here. But check the semantics match before swapping — `@std/fs` `copy()` removes the destination
+first, which would have destroyed WeiDU's uninstall backup, so `copyTree()` in `install_mod.ts` stays
+hand-written with a comment saying why.
+
+**For dates and times use `Temporal`, not `Date` and not `@std/datetime`.** It is a global in Deno
+2.9.6 with no unstable flag and no lib config needed, and its types are built in. `Temporal` makes the
+local-vs-instant distinction explicit where `Date` leaves it ambiguous: `Temporal.Now
+.plainDateTimeISO()` is unambiguously a local wall clock, which is what a session filename wants.
+`Temporal.PlainDateTime.from()` also parses the engine's space-separated log timestamps
+(`2026-01-01 00:00:00.000`) without reformatting, so nothing stored needs converting.
+
+**Do not use Python, perl, awk, sed, or shell scripts — for anything, including throwaway work.**
+Calling a system binary from `Deno.Command` is fine (`src/play.ts` invokes `script` because Deno has
+no pty support, and without a pty the game's stdout block-buffers at 4 KB), but the orchestration
+lives in TypeScript.
+
+This governs *how the work is done*, not just what ships:
+
+- **Read or search a file** → the Read and Grep tools, not `cat` / `sed` / `grep` pipelines.
+- **Edit a file** → the Edit and Write tools. Never `perl -i`, never a heredoc.
+- **Check behavior** → a test in `src/*_test.ts` run by `deno task test`, not a one-off `deno eval`
+  whose output is eyeballed once and thrown away.
+- **Shell** → invoking `deno`, plus genuine process inspection (`pgrep`, `lsof`). Nothing else.
+
+Not a style preference. Every shell detour in this project has cost something real: an apostrophe in
+`Baldur's Gate` breaking quoting mid-command, a zsh glob failure silently skipping a setup step so a
+test proved nothing, zsh not word-splitting a file list so a substitution never ran at all. The tools
+do not have those failure modes.
 
 ## Conventions
 
@@ -22,7 +48,7 @@ pty the game's stdout block-buffers at 4 KB — but the orchestration lives in T
   invariants listed there — no dependencies, bind loopback, bind SQL values and allowlist identifiers,
   escape HTML, redact at capture, ask before executing anything not shipped here. `deno task lint`
   enforces the mechanical half; `skills/security.md` is the procedure for the half that needs
-  judgement. Run it before publishing anything or adding a capture path, command, or permission.
+  judgment. Run it before publishing anything or adding a capture path, command, or permission.
 
 - **Never `git push` without explicit confirmation.** Hard rule. Applies to anything that leaves the
   machine — pushing, creating or changing remotes, publishing. Commit locally, report what is staged,
@@ -52,10 +78,17 @@ src/import.ts       rebuild events.db from raw session logs (idempotent)
 src/patterns.ts     report unclassified lines, to refine the rules in parse.ts
 src/serve.ts        read-only HTTP API + viewer
 src/parse.ts        tap line -> structured event; classification rules live here
+src/protections.ts  effect semantics - DOMAIN KNOWLEDGE, not log-derived; keep that distinction
+src/combatants.ts   pure fold: events -> per-creature observed state, with age and source
+src/*_test.ts       `deno task test`. Add real-data cases here, not throwaway `deno eval`
 src/db.ts           schema, WAL, prepared upserts
 src/config.ts       all paths and settings
 src/install_mod.ts  copy the WeiDU mod into the game dir and run WeiDU
-web/viewer.html     self-contained viewer (no CDN, no external requests)
+web/                one page per view: events.html, combatants.html, plus shared
+                    app.css and common.js. Routes are an explicit map in serve.ts -
+                    a request path never reaches the filesystem. No CDN, no
+                    external requests. Every page must import esc() from
+                    /common.js; `deno task lint` checks all of web/, not one file
 mod/gamelog/        the WeiDU mod: gamelog.tp2 + lib/a7log.lua (the in-game tap)
 docs/               project-specific: PLAN.md (design), FINDINGS.md (how it works, worklog),
                     GOTCHAS.md (traps specific to this stack - read before touching ui.menu or the
@@ -78,7 +111,8 @@ logs/               raw captured sessions; the source of truth, never rewritten
 | `deno task import` | re-import raw logs after changing classification rules |
 | `deno task patterns` | show the most frequent unclassified lines |
 | `deno task check` | type-check |
-| `deno task lint` | lint, type-check, and audit the security invariants (see `skills/security.md`) |
+| `deno task test` | run the test suite |
+| `deno task lint` | lint, type-check, test, and audit the security invariants (see `skills/security.md`) |
 
 ## Things that will bite you
 

@@ -226,9 +226,73 @@ out `opponent` in the session where he fights and `neutral` in the earlier one w
 casts Stoneskin on himself. That is an honest reading of each session in isolation; carrying a label
 across sessions would be guessing, since the same name is not necessarily the same creature.
 
+## No creature state is reachable from Lua — settled
+
+Asked whether an in-game inspector could read an enemy's active effects. It cannot, and this is
+recorded as closed rather than something to re-investigate.
+
+The **complete** tolua binding registry was extracted from the Mach-O — the whole registration block,
+not a sample. It holds 33 classes, all screens and UI plumbing. There is **no** `CGameSprite`,
+`CGameAIBase`, `CGameEffect` or `CGameArea`; grepping for them returns zero hits.
+
+- **`e` is a screen locator, not an object graph.** It is `g_pBaldurChitin`, bound in a Lua bootstrap
+  chunk compiled into the binary. `e:GetActiveEngine()` returns a `CBaldurEngine` whose entire Lua
+  surface is two methods: `OnRestButtonClick` and `OnLeftPanelButtonClick`. `game` (`CInfGame`) has 17
+  methods, none touching areas or creatures.
+- **Of 146 `Infinity_*` functions, zero** match effect / resist / protect / sprite / creature / actor /
+  target / examine. `Infinity_ClickObjectInWorld` and `HoverMouseOverObject` exist but are
+  UI-automation *actuators*: they simulate input and read nothing back.
+- **No Lua-visible hover, selection or target state.** The tooltip over a world creature is rendered
+  in C++ (`CInfToolTip`, one bound method, never called from the UI).
+
+**The one rich source is party-only.** `characters[id]` is an engine-populated record holding
+`statusEffects` (BAM + sequence + TLK strref per active effect), `resistances`, all five saving throws,
+per-damage-type AC modifiers, HP and THAC0 — exactly an inspector's data model. But the single refresh
+entry point `Infinity_UpdateLuaStats()` takes **no arguments**, so there is no way to ask for creature
+X. Other engine-populated globals, cross-checked against binary strings: `combatLog`, `characters`,
+`statusEffects`, `tempStats`, `listMetaInfo`, `store`, `connection`, `multiplayer` — nothing about
+non-party creatures.
+
+Consequence: the inspector is **authoritative for the party and inferred for opponents**, and that
+asymmetry is a property of the platform rather than a shortcut. An in-game panel is still possible, but
+it would render this same log-derived model.
+
+> To falsify this from inside the sandbox if ever in doubt: `characters` is a plain Lua table, so
+> `for k in pairs(characters)` from `a7log.lua` enumerates exactly which ids the engine writes.
+
+## Message forms that carry creature state
+
+The inspector's inputs, with the ownership rule for each — which differs by form, and is the thing
+most easily got backwards:
+
+| form | example | who the fact belongs to |
+|---|---|---|
+| `Casting <spell>...` | `Red Wizard: Casting Mirror Image...` | speaker is casting; **no target named** |
+| `is Casting <spell>[ : <target>]` | `Cernd: is Casting Heal` | second announcement form, same meaning |
+| `Casts <spell> : <target>` | `Casts Hold Person : Duergar` | the **target** receives it |
+| `<Effect> : <target>` | `Vampire: Domination : Rurik` | the **target** — Rurik is dominated, not the vampire |
+| bare effect name | `Duergar: Held` | the **speaker** has it |
+| `<name> was immune to my damage.` | `Jaheira: Cambion was immune…` | the **target** is protected; speaker attacked |
+| `Weapon Ineffective.` | `Korgan: Weapon Ineffective.` | **names nobody** — correlate with the speaker's last `Attacks X` |
+
+Three different ownership rules inside one stream, and the last form names no participant at all.
+
+`Casting X...` (999 rows) and the two immunity forms (634 rows) were previously classified `dialogue`,
+because they end in sentence punctuation — so the strongest inspector signals sat in the bucket the
+viewer hides by default.
+
+**Nothing announces an effect ending.** Confirmed against 61k events: no "wears off", "expires" or
+"no longer" message exists anywhere. Durations scale with caster level, which the log never reveals.
+Only death, `Dispel Effects` and `Unsummoned` clear state observably — which is why the inspector
+reports observations with an age and never claims a protection is still active.
+
 ## Toolchain verification
 
 - `deno 2.9.6`.
+- **`Temporal` is a global with no unstable flag and no lib config**, and its types are built in. It
+  has no format-pattern API: only `toString()` (ISO 8601 only) and `toLocaleString()` (locale
+  dependent). It does parse the engine's space-separated log timestamps
+  (`Temporal.PlainDateTime.from("2026-01-01 00:00:00.000")`), so nothing stored needed reformatting.
 - **`node:sqlite`** (`DatabaseSync`) works with **no flags and no dependencies** — confirmed with a
   CREATE / INSERT / `GROUP BY … ORDER BY sum()` round-trip. Chosen over `jsr:@db/sqlite`, which needs
   `--allow-ffi` and downloads a prebuilt native library.
@@ -240,7 +304,7 @@ across sessions would be guessing, since the same name is not necessarily the sa
 
 **Build.** Project scaffolded under `Documents/BG2EE-GameLog`; WeiDU mod (`mod/gamelog`), capture
 (`play.ts`), parse/store (`parse.ts`, `db.ts`), re-import (`import.ts`), rule refinement
-(`patterns.ts`), viewer (`serve.ts`, `web/viewer.html`), docs.
+(`patterns.ts`), viewer (`serve.ts`, `web/`), docs.
 
 **Resolved — the `Infinity_Log` gate. It works.** Confirmed against the running game: the tap's
 load-time line came through, and so does the stock UI's own logging (`INFO: LUA: Initializing Quests`
