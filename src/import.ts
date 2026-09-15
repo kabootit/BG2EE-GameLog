@@ -8,19 +8,16 @@
  *   deno task import                 # every log in logs/
  *   deno task import logs/foo.log    # just this one
  */
+import { basename, join } from "jsr:@std/path@1";
 import { LOGS_DIR } from "./config.ts";
 import { EventLinker, type GameEvent, parseLine, parseRoster, SideResolver } from "./parse.ts";
 import { makeInserter, openDb } from "./db.ts";
-
-function basename(path: string): string {
-  return path.split("/").pop() ?? path;
-}
 
 async function sessionLogs(): Promise<string[]> {
   const found: string[] = [];
   try {
     for await (const entry of Deno.readDir(LOGS_DIR)) {
-      if (entry.isFile && entry.name.endsWith(".log")) found.push(`${LOGS_DIR}/${entry.name}`);
+      if (entry.isFile && entry.name.endsWith(".log")) found.push(join(LOGS_DIR, entry.name));
     }
   } catch {
     return [];

@@ -9,7 +9,7 @@ The standing rule is in `docs/SECURITY.md`: **this project must not compromise t
 on.** This is the procedure for checking that it still holds.
 
 `deno task lint` enforces the mechanical invariants. This document covers the half that needs
-judgement — whether a new capability is appropriate at all, and whether a new path leaks something no
+judgment — whether a new capability is appropriate at all, and whether a new path leaks something no
 pattern is looking for.
 
 ## When to run
@@ -27,8 +27,11 @@ pattern is looking for.
 deno task lint
 ```
 
-Eight checks: dependencies, permissions, bind-address, sql-injection, html-escaping, redaction,
-committed-logs, binary-execution. Each maps to a section of `docs/SECURITY.md`.
+Nine checks: dependencies, permissions, bind-address, sql-injection, html-escaping, untrusted-text,
+redaction, committed-logs, binary-execution. Each maps to a section of `docs/SECURITY.md`.
+
+`deno task lint` also runs the test suite, which includes `audit()` asserted as an ordinary test — so
+an invariant regression fails the normal test run, not only the lint or an install attempt.
 
 Fix any failure before going further. **Passing is necessary, not sufficient** — every check is a
 pattern, and patterns only catch what someone already thought of.
@@ -40,7 +43,7 @@ When adding a check, verify it **fails** as well as passes — break the invaria
 the finding appears, then restore. A check that cannot go red is worse than none, because it reads as
 coverage.
 
-## Step 2 — judgement checks
+## Step 2 — judgment checks
 
 ### New external commands
 
@@ -69,6 +72,31 @@ Look for: account or user ids, machine or user names, absolute paths, tokens, ke
 email addresses. Anything found gets added to `redact()` in `src/play.ts` — **at the point of capture,
 never as a cleanup pass**. Then re-scan every committed log, because the old ones will not have been
 fixed by the new rule.
+
+### New imports
+
+```sh
+grep -rhoE '(from|import) "[^"]+"' src/ | sort -u
+```
+
+Policy: Deno built-ins, relative files, and `jsr:@std/*` **with a pinned major version**. Everything
+else fails — npm, other jsr scopes, raw URLs. Enforced by `importAllowed()` in `src/lint.ts`, tested
+both ways in `src/lint_test.ts`.
+
+For each new import, three questions:
+
+- **Is the namespace the platform's own standard library?** `@std` is allowed as a deliberate trust
+  boundary. A package that merely looks official is not.
+- **Is a major version pinned?** An unpinned specifier resolves to whatever is newest at install time.
+  This is the half that gets forgotten, and an unpinned stdlib import is worse than a pinned
+  third-party one.
+- **Does the imported function behave like the code it replaced?** Not a formality. `@std/fs`
+  `copy()` needs `overwrite: true` to write into an existing directory and removes the destination
+  first — which would delete `gamelog/backup/`, WeiDU's uninstall data. `copyTree()` in
+  `install_mod.ts` stays hand-written for exactly that reason. Read the semantics, not just the name.
+
+If a swap lands, check `deno.lock` is committed: it pins integrity hashes, which is most of what a
+version pin is worth.
 
 ### New permissions
 

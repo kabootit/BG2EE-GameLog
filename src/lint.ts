@@ -2,7 +2,7 @@
  * Security audit — the mechanical half.
  *
  * Every check here corresponds to an invariant in docs/SECURITY.md. Documenting
- * an invariant does not keep it true; this is what keeps it true. The judgement
+ * an invariant does not keep it true; this is what keeps it true. The judgment
  * half — is a new capability appropriate at all, does a new capture path leak
  * something — is in skills/security.md and cannot be automated.
  *
@@ -29,17 +29,89 @@ async function sources(dir: string, ext: string): Promise<string[]> {
   return names.sort();
 }
 
-/** No third-party dependencies: zero supply chain is the point. */
+/**
+ * What may be imported.
+ *
+ * Deno built-ins, relative files, and the Deno standard library. `@std` is
+ * allowed as a deliberate trust boundary: it is published and audited by the
+ * Deno team rather than being arbitrary third-party code, which is the risk the
+ * zero-supply-chain rule exists to avoid. Everything else — npm, other jsr
+ * scopes, raw URLs — still fails.
+ *
+ * `@std` imports must pin a major version. An unpinned specifier resolves to
+ * whatever is newest at install time, which reintroduces exactly the moving
+ * target the rule is meant to prevent.
+ */
+export function importAllowed(spec: string): string | null {
+  if (spec === "node:sqlite") return null;
+  if (spec.startsWith("./")) return null;
+  if (spec.startsWith("jsr:@std/")) {
+    return /@\^?\d/.test(spec) ? null : "must pin a major version, e.g. jsr:@std/assert@1";
+  }
+  return "not a Deno built-in, a relative file, or jsr:@std/*";
+}
+
+/**
+ * Ways a module specifier can appear.
+ *
+ * Static forms are anchored to the start of a line, because a top-level import
+ * always is. The previous version matched `from "…"` anywhere in the file and so
+ * flagged an ordinary prose comment containing the words `from "the last N of
+ * many"` — a false positive, and the kind that trains people to stop reading the
+ * output.
+ *
+ * The dynamic form is matched too. It is not anchored, since `await import(…)`
+ * appears mid-expression — and the old pattern missed it completely, which meant
+ * a dynamic import of anything at all slipped past this check.
+ */
+const IMPORT_FORMS = [
+  // import x from "s" / import { a } from "s" / export * from "s"
+  /^\s*(?:import|export)\b[^"';]*?\bfrom\s*["']([^"']+)["']/gm,
+  // import "s"  (side-effect only)
+  /^\s*import\s*["']([^"']+)["']/gm,
+  // await import("s")
+  /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g,
+];
+
+/**
+ * Drop comment lines before scanning.
+ *
+ * The check reads raw source, so prose *about* an import looks like one. That
+ * bit twice in quick succession: first a comment containing the words
+ * `from "the last N of many"`, then this file's own documentation of the
+ * patterns above.
+ *
+ * Only whole comment lines are removed, not `//` to end-of-line anywhere —
+ * stripping mid-line would truncate a URL inside a string and could turn a real
+ * import into an unmatched fragment, trading a false positive for a false
+ * negative. Real code never puts an import on a line beginning `//` or `*`.
+ */
+function codeOnly(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => {
+      const t = line.trimStart();
+      return t.startsWith("//") || t.startsWith("*") || t.startsWith("/*") ? "" : line;
+    })
+    .join("\n");
+}
+
 async function checkDependencies(fail: Fail) {
-  const allowed = /^(node:sqlite|\.\/)/;
   for (const file of await sources("src", ".ts")) {
-    const text = await read(file);
-    for (const [, spec] of text.matchAll(/(?:from|import)\s+"([^"]+)"/g)) {
-      if (!allowed.test(spec)) fail("dependencies", `${file} imports "${spec}"`);
+    const text = codeOnly(await read(file));
+    const seen = new Set<string>();
+    for (const form of IMPORT_FORMS) {
+      for (const [, spec] of text.matchAll(form)) {
+        if (seen.has(spec)) continue;
+        seen.add(spec);
+        const why = importAllowed(spec);
+        if (why !== null) fail("dependencies", `${file} imports "${spec}" — ${why}`);
+      }
     }
   }
   const config = JSON.parse(await read("deno.json"));
   if (config.imports && Object.keys(config.imports).length > 0) {
+    // An import map hides the real specifier from the check above.
     fail("dependencies", "deno.json declares an import map");
   }
 }
@@ -116,23 +188,48 @@ async function checkSqlInterpolation(fail: Fail) {
   }
 }
 
-/** Anything from the database originates in game text, which mods control. */
+/**
+ * Anything from the database originates in game text, which mods control.
+ *
+ * Scans every file under `web/` rather than one named page: the views are
+ * separate pages now, and a check hard-wired to one filename would have silently
+ * stopped covering the other when they were split.
+ */
 async function checkHtmlEscaping(fail: Fail) {
-  const text = await read("web/viewer.html");
-  if (!/const esc = /.test(text)) fail("html-escaping", "viewer.html defines no esc() helper");
-  // Quotes included: some values land in attributes, not text nodes.
-  if (!text.includes(`[&<>"']`)) {
+  const files = [
+    ...await sources("web", ".html"),
+    ...await sources("web", ".js"),
+  ];
+  if (files.length === 0) fail("html-escaping", "no web/ pages found to check");
+
+  // esc() lives in one shared module; assert it exists and still covers quotes,
+  // since some values land in attributes rather than text nodes.
+  const shared = await read("web/common.js");
+  if (!/export const esc = /.test(shared)) {
+    fail("html-escaping", "web/common.js exports no esc() helper");
+  }
+  if (!shared.includes(`[&<>"']`)) {
     fail("html-escaping", `esc() no longer escapes all of & < > " '`);
   }
-  for (const sink of ["insertAdjacentHTML", "outerHTML", "document.write", "eval(", "new Function("]) {
-    if (text.includes(sink)) fail("html-escaping", `viewer.html uses ${sink}`);
-  }
-  // Data-derived interpolation: row fields and facet values must go through esc().
-  for (const line of text.split("\n")) {
-    for (const [, expr] of line.matchAll(/\$\{((?:r|row|value|current)[^}]*)\}/g)) {
-      if (!expr.includes("esc(") && !/\.(n|length)$/.test(expr.trim())) {
-        fail("html-escaping", `viewer.html interpolates "${expr.trim()}" unescaped`);
+
+  for (const file of files) {
+    const text = await read(file);
+    for (
+      const sink of ["insertAdjacentHTML", "outerHTML", "document.write", "eval(", "new Function("]
+    ) {
+      if (text.includes(sink)) fail("html-escaping", `${file} uses ${sink}`);
+    }
+    // Data-derived interpolation: row fields and facet values must go through esc().
+    for (const line of text.split("\n")) {
+      for (const [, expr] of line.matchAll(/\$\{((?:r|row|value|current)[^}]*)\}/g)) {
+        if (!expr.includes("esc(") && !/\.(n|length)$/.test(expr.trim())) {
+          fail("html-escaping", `${file} interpolates "${expr.trim()}" unescaped`);
+        }
       }
+    }
+    // Every page must pull in the shared helper rather than rolling its own.
+    if (file.endsWith(".html") && !text.includes(`from "/common.js"`)) {
+      fail("html-escaping", `${file} does not import the shared esc() helper`);
     }
   }
 }
@@ -231,7 +328,7 @@ export function reportFindings(findings: Finding[], verbose = true): boolean {
 
 async function main() {
   if (reportFindings(await audit())) Deno.exit(1);
-  console.log(`\nAll security invariants hold. Judgement-based review: skills/security.md`);
+  console.log(`\nAll security invariants hold. Judgment-based review: skills/security.md`);
 }
 
 if (import.meta.main) await main();

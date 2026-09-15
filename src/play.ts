@@ -5,6 +5,8 @@
  * pipeline step. The raw session log is always written first and in full: it is
  * the source of truth, and `import.ts` can rebuild the database from it.
  */
+import { join } from "jsr:@std/path@1";
+import { TextLineStream } from "jsr:@std/streams@1/text-line-stream";
 import { GAME_BINARY, LOGS_DIR, TAP_MARKER } from "./config.ts";
 import { EventLinker, parseLine, parseRoster, SideResolver } from "./parse.ts";
 import { makeInserter, makeSideUpdater, openDb } from "./db.ts";
@@ -28,17 +30,34 @@ export function redact(line: string): string {
     .replace(/(Steam ID:\s*)\d{5,}/gi, "$1<steam-id>");
 }
 
-function stamp(d = new Date()): string {
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}` +
-    `-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+/**
+ * Session filename stamp, local time: `20260914-184105`.
+ *
+ * Temporal rather than Date because `plainDateTimeISO()` is explicitly a local
+ * wall clock, where `new Date()` leaves local-vs-instant implicit.
+ *
+ * Built from the fields directly. Temporal has no format-pattern API — only
+ * `toString()`, which is ISO 8601 only, and `toLocaleString()`, which is
+ * locale-dependent and so unusable for a filename. Formatting the ISO string
+ * with regex would mean turning structured data into text and then taking it
+ * apart again; the fields are already numbers.
+ *
+ * Fixed width is the requirement, not decoration: `deno task import` sorts
+ * sessions by filename, so an unpadded month would break chronological order.
+ *
+ * Takes the time as a parameter so it can be tested.
+ */
+export function stamp(now: Temporal.PlainDateTime = Temporal.Now.plainDateTimeISO()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.year}${pad(now.month)}${pad(now.day)}` +
+    `-${pad(now.hour)}${pad(now.minute)}${pad(now.second)}`;
 }
 
 async function main() {
   await Deno.mkdir(LOGS_DIR, { recursive: true });
 
   const session = `session-${stamp()}.log`;
-  const logPath = `${LOGS_DIR}/${session}`;
+  const logPath = join(LOGS_DIR, session);
   const logFile = await Deno.open(logPath, { create: true, append: true, write: true });
   const encoder = new TextEncoder();
 
@@ -182,26 +201,24 @@ async function main() {
   };
   Deno.addSignalListener("SIGINT", onInterrupt);
 
+  // TextLineStream replaces a hand-rolled chunk buffer. Worth the swap: the
+  // manual version had to get partial-line carry-over right on every chunk
+  // boundary, and a line split across two reads is exactly the case that only
+  // shows up under load.
   const readStdout = async () => {
-    let buffer = "";
-    for await (const chunk of child.stdout.pipeThrough(new TextDecoderStream())) {
-      buffer += chunk;
-      let nl = buffer.indexOf("\n");
-      while (nl !== -1) {
-        handle(buffer.slice(0, nl));
-        buffer = buffer.slice(nl + 1);
-        nl = buffer.indexOf("\n");
-      }
-    }
-    if (buffer.length > 0) handle(buffer);
+    const lines = child.stdout
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream());
+    for await (const line of lines) handle(line);
   };
 
   // Must be drained, not just piped: an unread pipe fills and blocks the child.
   const readStderr = async () => {
-    for await (const chunk of child.stderr.pipeThrough(new TextDecoderStream())) {
-      for (const line of chunk.split("\n")) {
-        if (line.trim() !== "") note(`stderr: ${redact(line)}`);
-      }
+    const lines = child.stderr
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream());
+    for await (const line of lines) {
+      if (line.trim() !== "") note(`stderr: ${redact(line)}`);
     }
   };
 

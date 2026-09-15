@@ -17,28 +17,30 @@
  *   source:   https://github.com/WeiDUorg/weidu
  *   releases: https://github.com/WeiDUorg/weidu/releases
  */
+import { encodeHex } from "jsr:@std/encoding@1/hex";
+import { exists } from "jsr:@std/fs@1/exists";
+import { join } from "jsr:@std/path@1";
 import { GAME_DIR, MOD_DIR, WEIDU } from "./config.ts";
 import { audit, CHECKS, reportFindings } from "./lint.ts";
 
 const MOD_NAME = "gamelog";
 const SETUP = `setup-${MOD_NAME}`;
 
+/**
+ * Merge a directory into the destination, leaving anything already there.
+ *
+ * Deliberately not `copy()` from @std/fs: that needs `overwrite: true` to write
+ * into an existing directory, and it removes the destination first. WeiDU keeps
+ * its uninstall data in `gamelog/backup/` inside this very directory, so a
+ * remove-then-copy would silently destroy the ability to uninstall.
+ */
 async function copyTree(from: string, to: string) {
   await Deno.mkdir(to, { recursive: true });
   for await (const entry of Deno.readDir(from)) {
-    const src = `${from}/${entry.name}`;
-    const dst = `${to}/${entry.name}`;
+    const src = join(from, entry.name);
+    const dst = join(to, entry.name);
     if (entry.isDirectory) await copyTree(src, dst);
     else if (entry.isFile) await Deno.copyFile(src, dst);
-  }
-}
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await Deno.stat(path);
-    return true;
-  } catch {
-    return false;
   }
 }
 
@@ -111,7 +113,7 @@ async function findWeidu(): Promise<Found> {
 
 async function sha256(path: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", await Deno.readFile(path));
-  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return encodeHex(new Uint8Array(digest));
 }
 
 /**

@@ -159,7 +159,7 @@ directly cannot bypass it, and it runs before anything is copied or executed.
 The checks are verified to fail, not just to pass: deliberately regressing an invariant must produce
 exactly the corresponding finding. A green check that cannot go red is worth nothing.
 
-`skills/security.md` covers the judgement half — whether a new capability is appropriate, and whether
+`skills/security.md` covers the judgment half — whether a new capability is appropriate, and whether
 a new capture path leaks something no pattern is looking for.
 
 ## Fixed
@@ -179,8 +179,12 @@ cannot be named in advance. That is precisely why it is the one command that ask
 
 ## Invariants to preserve
 
-- **No third-party dependencies.** Deno built-ins only (`node:sqlite`, `Deno.serve`, `Deno.Command`).
-  Zero supply chain is a security property worth more than any convenience a package would add.
+- **Deno built-ins and `jsr:@std/*` only, with a pinned major version.** No npm, no other jsr scope,
+  no raw URLs. `@std` is a deliberate trust boundary: published and audited by the Deno team, which is
+  a different risk from arbitrary third-party code. The pin matters as much as the scope — an unpinned
+  specifier resolves to whatever is newest at install time, which is the moving target the rule exists
+  to prevent. Enforced by `importAllowed()` in `src/lint.ts` and tested both ways in
+  `src/lint_test.ts`.
 - **Never execute something this project did not ship without showing provenance and asking.**
 - **Bind loopback only**, and let the permission flag enforce it as well as the code.
 - **Least permission in `deno.json`.** Narrow `--allow-run` / `--allow-net` to what a task actually

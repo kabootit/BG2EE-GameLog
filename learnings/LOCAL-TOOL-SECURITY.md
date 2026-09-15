@@ -216,6 +216,32 @@ Write down what the control does *not* do. The same applies to distinguishing **
 an unescaped interpolation that no attacker-controlled value currently reaches is worth fixing and
 worth labelling as latent. Reporting it as exploitable is as much a failure of accuracy as missing it.
 
+## 10b. A dependency rule needs a boundary *and* a pin
+
+"No dependencies" is easy to state and easy to resent. The first time the rule cost something real —
+a test suite wanting an assertion helper — the tempting move was an exception for that one package.
+
+A better shape is a **trust boundary plus a version pin**:
+
+- **Boundary**: the platform's own standard library is allowed; everything else is not. It ships with
+  the runtime's release process and audience rather than being one person's package, which is a
+  genuinely different risk. Arbitrary registries, other namespaces, and raw URLs stay rejected.
+- **Pin**: an allowed import must name a major version. This is the half that gets forgotten. An
+  unpinned specifier resolves to whatever is newest *at install time*, which reintroduces exactly the
+  moving target the rule was protecting against — so an unpinned stdlib import is arguably worse than
+  a pinned third-party one.
+
+Both halves are mechanically checkable, and the check should be **a testable function, not a regex
+buried in a loop**. Extracting the predicate meant the policy could be tested in both directions —
+that `npm:…`, other namespaces and raw URLs are refused, and that an *unpinned* allowed-namespace
+import is refused too. A policy you cannot test is a preference.
+
+And once a rule is relaxed, go and use it: the point was never abstinence. Here it retired a
+hand-rolled line buffer, a hex encoder, a path joiner and a date formatter. But **check the semantics
+before each swap** — one stdlib "copy directory" function removes the destination first, which would
+have silently destroyed the uninstall data the tool depends on. That one stayed hand-written, with a
+comment explaining why. A rule that says "prefer the library" still needs judgment at each site.
+
 ## 11. Accepted risk is a decision — write it down where it will be re-read
 
 Some risks you accept: a local API with no authentication, a dependency trusted once approved, a
@@ -292,7 +318,7 @@ Four rules for the checks themselves:
    radius should run the audit itself and refuse, because the task runner is trivially bypassed by
    whoever is debugging.
 
-### Tier 3 — a procedure for the judgement half
+### Tier 3 — a procedure for the judgment half
 
 What is left cannot be automated: *is this new capability appropriate at all? does this new capture
 path leak something no pattern is looking for?* That needs a written procedure, and three properties
@@ -317,6 +343,39 @@ belongs at the top of the procedure, or green checks become a reason to stop loo
 Neither survives in a wiki. The audit is a task sitting alongside the test command; the procedure
 lives in the repository and is linked from the contributor doc a newcomer — or a future you — actually
 opens. Discoverability is part of the control.
+
+### The audit is worth asserting in the test suite too
+
+The mechanical checks were reachable two ways — the lint task, and the risky command that refuses to
+run when they fail. Adding a third, `assert(await audit() === [])` as an ordinary test, costs one line
+and means a regression fails the normal test run rather than waiting for someone to lint or install.
+
+Cheap, and it puts the invariants on the path everyone already walks.
+
+---
+
+## 13. Proving a negative takes the whole registry, not a search
+
+A recurring question for a tool wrapping software you don't own: *can the platform do X at all?* The
+answer shapes everything downstream, and "I searched and found nothing" is weak evidence — you only
+ever prove the absence of the names you thought to search for.
+
+What made it conclusive here was extracting the **complete** binding table the runtime registers, not
+grepping for likely names. A full enumeration supports a real negative: every class exposed to the
+scripting layer, and none of them is the one needed. Searching supports only "not found by me".
+
+Two things that helped:
+
+- **Follow the indirection to its source.** A promising-looking object turned out to be defined in a
+  bootstrap script compiled into the binary, and reading that script gave the complete list of what it
+  provides — which was far narrower than its name implied.
+- **Distinguish reading from acting.** Several functions matched the keywords and looked like state
+  accessors, but sat in a contiguous block of input *actuators*: they simulate a click or a hover and
+  return nothing. A name match is not a capability match.
+
+A firm negative is a real deliverable. It closes a line of work, prevents the same investigation being
+redone in six months, and redirects effort to the approach that can actually work — which is worth
+writing down at least as carefully as a feature.
 
 ---
 
