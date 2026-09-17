@@ -7,12 +7,18 @@
  * better rules - look at the most frequent unmatched text, add a rule, then
  * `deno task import` to re-classify without replaying.
  */
-import { type Db, openDb } from "./db.ts";
-import { isDeclined } from "./protections.ts";
+import { type Db, loadDerivedSpells, openDb } from "./db.ts";
+import { hydrate, isDeclined, knownCount } from "./protections.ts";
 import { type EventRow, foldCombatants } from "./combatants.ts";
 
 function main() {
   const db = openDb();
+
+  // Must match what the viewer knows, or this report measures a different set
+  // than the screen shows. That failure has happened here before and it is
+  // worse than having no report, because a plausible-looking report gets
+  // trusted. `serve.ts` hydrates identically.
+  hydrate(loadDerivedSpells(db));
 
   const kinds = db.prepare(
     `SELECT kind, count(*) AS n FROM events GROUP BY kind ORDER BY n DESC`,
@@ -131,12 +137,14 @@ function reportProtectionCoverage(db: Db, limit: number) {
   // Per session, matching how the view scopes itself — a fold across session
   // boundaries would merge creatures that never met.
   const tally = new Map<string, number>();
+  const byCategory = new Map<string, number>();
   let shown = 0;
   for (const session of sessions) {
     const { combatants } = foldCombatants(rows.all(session) as unknown as EventRow[]);
     for (const c of combatants) {
       for (const o of c.observations) {
         shown++;
+        byCategory.set(o.category, (byCategory.get(o.category) ?? 0) + 1);
         if (o.category === "unknown") tally.set(o.name, (tally.get(o.name) ?? 0) + 1);
       }
     }
@@ -155,6 +163,18 @@ function reportProtectionCoverage(db: Db, limit: number) {
     `  ${tally.size} distinct names have no entry in src/protections.ts ` +
       `(${declined} of them declined, ${undecided.length} still to judge)`,
   );
+  const { hand, total: known } = knownCount();
+  console.log(
+    known > hand
+      ? `  ${hand} names hand-written, ${known - hand} added by \`deno task extract\``
+      : `  ${hand} names hand-written; \`deno task extract\` has not been run`,
+  );
+  // Which tags actually reach a card. `warded` appearing here is the evidence
+  // that extraction is doing something the hand table did not already cover -
+  // it is the one category no human writes.
+  console.log(`  tags on screen: ${
+    [...byCategory].sort((a, b) => b[1] - a[1]).map(([c, n]) => `${c}:${n}`).join("  ")
+  }`);
 
   if (undecided.length > 0) {
     console.log(`\n  Untagged on screen — add to TABLE, or to DECLINED if not state:\n`);

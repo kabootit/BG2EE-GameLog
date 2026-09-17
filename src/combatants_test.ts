@@ -139,14 +139,17 @@ Deno.test("interrupted dialogue is not mistaken for an effect", () => {
 });
 
 Deno.test("dispel clears dispellable state and spares the rest", () => {
+  // Spell Turning is the survivor, not Protection From Magical Weapons: the
+  // game files say PFMW's core effect carries the dispel bit, so it goes. This
+  // test used PFMW until `deno task extract` showed the hand-written value was
+  // wrong.
   const r = foldCombatants(rows([
     "Mage: Casts Mirror Image : Mage",
-    "Mage: Casts Protection From Magical Weapons : Mage",
+    "Mage: Casts Spell Turning : Mage",
     "Mage: Dispel Effects",
   ]));
   const names = find(r, "Mage")!.observations.map((o) => o.name);
-  // Mirror Image is dispellable; Protection From Magical Weapons is not.
-  assertEquals(names, ["Protection From Magical Weapons"]);
+  assertEquals(names, ["Spell Turning"]);
 });
 
 Deno.test("a dispel is never itself recorded as state", () => {
@@ -182,9 +185,11 @@ Deno.test("Spell Thrust strips spell protections and leaves the rest", () => {
   ]);
 });
 
-Deno.test("Breach strips combat protections, including undispellable ones", () => {
-  // Protection From Magical Weapons survives any Dispel Magic and does not
-  // survive this - the case a single dispellable flag cannot express.
+Deno.test("Breach strips combat protections and nothing else", () => {
+  // The third distinct class. Breach takes both combat protections and leaves
+  // the spell protection standing, which is the exact inverse of Spell Thrust
+  // above and unrelated to what Dispel Magic does. Three removal spells, three
+  // different answers on the same four buffs.
   assertEquals(leftOn(["Rurik: Casts Breach : Mage"]), ["Invisibility", "Spell Turning"]);
 });
 
@@ -197,10 +202,10 @@ Deno.test("True Sight strips only concealment", () => {
 });
 
 Deno.test("Dispel Magic still goes by dispellable", () => {
-  assertEquals(leftOn(["Mage: Dispel Effects"]), [
-    "Protection From Magical Weapons",
-    "Spell Turning",
-  ]);
+  // Only Spell Turning is undispellable among the four, so only it survives.
+  // Contrast with Breach below, which takes the two combat protections and
+  // leaves this one — the distinction a single flag cannot express.
+  assertEquals(leftOn(["Mage: Dispel Effects"]), ["Spell Turning"]);
 });
 
 Deno.test("Spellstrike lands as an effect naming its target", () => {

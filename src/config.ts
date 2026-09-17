@@ -28,7 +28,27 @@ export const GAME_DIR = Deno.env.get("BG2EE_GAME_DIR") ??
 export const GAME_BINARY = Deno.env.get("BG2EE_BINARY") ??
   `${GAME_DIR}/BaldursGateIIEnhancedEdition.app/Contents/MacOS/BaldursGateIIEnhancedEdition`;
 
-export const UI_MENU = `${GAME_DIR}/override/ui.menu`;
+/**
+ * Loose game resources. Mods install here and the engine reads it before the
+ * biffs, so this directory is where the *actual* installed semantics live — on
+ * this install, 881 of the 1,124 standard spells are overridden.
+ */
+export const OVERRIDE_DIR = `${GAME_DIR}/override`;
+
+export const UI_MENU = `${OVERRIDE_DIR}/ui.menu`;
+
+/** Biffed resources, indexed by chitin.key. Read only when override/ misses. */
+export const CHITIN_KEY = `${GAME_DIR}/chitin.key`;
+export const DATA_DIR = `${GAME_DIR}/data`;
+
+/**
+ * Which localization to read strings from. The combat log prints whatever this
+ * language's dialog.tlk contains, so it has to match the running game.
+ */
+export const GAME_LANG = Deno.env.get("BG2EE_LANG") ?? "en_US";
+
+export const DIALOG_TLK = Deno.env.get("BG2EE_TLK") ??
+  `${GAME_DIR}/lang/${GAME_LANG}/dialog.tlk`;
 
 export const USER_DIR = Deno.env.get("BG2EE_USER_DIR") ??
   `${home()}/Documents/Baldur's Gate II - Enhanced Edition`;

@@ -63,6 +63,9 @@
   .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .spacer { flex: 1; }
   .status { color: var(--muted); font-size: .82rem; }
+  /* A warning about the captured data, not about the page. Cursor is a hint
+     that the full explanation is in the title attribute. */
+  .status.warn { color: var(--accent); cursor: help; }
   .wrap {
     overflow-x: auto; background: var(--panel);
     border: 1px solid var(--border); border-radius: 8px;
@@ -112,10 +115,15 @@
   .tag.protection { color: #c0392b; border-color: #c0392b88; }
   .tag.disable    { color: #2e8b57; border-color: #2e8b5788; }
   .tag.buff       { color: #b8860b; border-color: #b8860b88; }
+  /* Derived from the game files rather than judged by hand: something is
+     helping this creature, but the files cannot say whether defensively.
+     Dashed to read as less certain than the three above. */
+  .tag.warded     { color: #7d6ba8; border-color: #7d6ba888; border-style: dashed; }
   @media (prefers-color-scheme: dark) {
     .tag.protection { color: #ff8a7a; border-color: #ff8a7a66; }
     .tag.disable    { color: #7fd6a2; border-color: #7fd6a266; }
     .tag.buff       { color: #e0b65c; border-color: #e0b65c66; }
+    .tag.warded     { color: #b3a3d9; border-color: #b3a3d966; }
   }
   .counter { font-size: .76rem; color: var(--muted); margin: .35rem 0 0; font-style: italic; }
   .note { font-size: .78rem; color: var(--muted); margin: 0 0 .8rem; }

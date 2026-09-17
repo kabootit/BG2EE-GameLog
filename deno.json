@@ -4,6 +4,7 @@
     "serve": "deno run --allow-env --allow-read --allow-write --allow-net=127.0.0.1 src/serve.ts",
     "import": "deno run --allow-env --allow-read --allow-write src/import.ts",
     "patterns": "deno run --allow-env --allow-read --allow-write src/patterns.ts",
+    "extract": "deno run --allow-env --allow-read --allow-write src/extract.ts",
     "install-mod": "deno run --allow-env --allow-run --allow-read --allow-write src/install_mod.ts",
     "check": "deno check src/*.ts",
     "test": "deno test --allow-env --allow-read --allow-write src/",

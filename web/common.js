@@ -53,6 +53,48 @@ function syncTabs(params) {
   }
 }
 
+/**
+ * What the sort chain becomes when a column header is clicked.
+ *
+ * A click always makes that column the primary sort. Clicking the column that
+ * is already primary reverses it, and a third click drops it.
+ *
+ * New keys used to join as *least significant*, on the reasoning that a stray
+ * click should not disturb the primary sort. In practice that made clicking look
+ * broken: sort by `id`, then click `side`, and nothing moves. `id` is unique, so
+ * no two rows ever tie on it, so a key behind it is never consulted — and the
+ * same goes for any chain led by a unique column. Promoting on every click means
+ * no click is ever a no-op, which is the property that was actually missing.
+ *
+ * Pure, and exported separately from the page, because this is the second sort
+ * bug reported here and a state machine buried in an event handler cannot be
+ * tested. See `src/web_test.ts`.
+ *
+ * @param sort current chain, `[{key, dir}]`, most significant first
+ * @param key the column clicked
+ * @param maxKeys how long the chain may grow
+ * @returns a new chain; the input is not modified
+ */
+export function nextSort(sort, key, maxKeys) {
+  const next = sort.map((s) => ({ ...s }));
+  const i = next.findIndex((s) => s.key === key);
+
+  if (i === -1) {
+    next.unshift({ key, dir: "asc" });
+    // The oldest key gives way once the chain is full.
+    if (next.length > maxKeys) next.pop();
+  } else if (i > 0) {
+    // Already sorted, but buried behind something. Promote it unchanged — that
+    // alone visibly reorders the table.
+    next.unshift(...next.splice(i, 1));
+  } else if (next[0].dir === "asc") {
+    next[0].dir = "desc";
+  } else {
+    next.shift();
+  }
+  return next;
+}
+
 /** Fill a <select> from facet rows, preserving the current choice. */
 export function fillSelect(id, rows, allLabel) {
   const select = $(id);

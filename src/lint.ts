@@ -44,7 +44,10 @@ async function sources(dir: string, ext: string): Promise<string[]> {
  */
 export function importAllowed(spec: string): string | null {
   if (spec === "node:sqlite") return null;
-  if (spec.startsWith("./")) return null;
+  // Any relative path is a file in this repo. `../` is needed so a test under
+  // src/ can reach the browser-side helpers in web/ — the sort chain lives
+  // there as a pure function precisely so it can be tested.
+  if (spec.startsWith("./") || spec.startsWith("../")) return null;
   if (spec.startsWith("jsr:@std/")) {
     return /@\^?\d/.test(spec) ? null : "must pin a major version, e.g. jsr:@std/assert@1";
   }
@@ -162,24 +165,70 @@ const SQL_SAFE_EXPRESSIONS = new Set([
   'clauses.join(" AND ")', // ditto — the clause strings are literals with ?
   "orderBy", // built by orderClause(), each key checked against SORTABLE
   "by", // checked against GROUPABLE before use
-  "column", // literal call-site argument inside filters()
+  // Two uses, both allowlisted before they get here: the literal call-site
+  // argument inside filters(), and the sort key in orderClause() which came
+  // through SORTABLE.
+  "column",
+  // The column whose empty rows are being dropped. primarySortColumn() returns
+  // it from sortKeys(), which only ever yields names present in SORTABLE.
+  "notNull",
+  "scoped.sql", // a WHERE clause from filters(), same as `where`
   "bySession.sql",
   "byKind.sql",
   'kinds.map(() => "?").join(", ")', // placeholder list, not values
 ]);
 
+/**
+ * Template literals passed straight to the database.
+ *
+ * Identifying SQL by *where it goes* rather than by what it contains, because
+ * content matching alone cuts both ways: a query written in lowercase would
+ * slip past a keyword test, while ordinary prose trips it. A log line reading
+ * "added from the game files" failed this check on `\bFROM\b`.
+ */
+function sqlCallSites(text: string): Set<number> {
+  const starts = new Set<number>();
+  for (const m of text.matchAll(/(?:query|prepare|exec)\s*(?:<[^>]*>)?\s*\(\s*`/g)) {
+    // Index of the backtick that opens the template, to match the scan below.
+    starts.add(m.index + m[0].length - 1);
+  }
+  return starts;
+}
+
+/**
+ * Keywords in caps only. Every real query in this codebase writes them that
+ * way; the lowercase forms are English, and treating the two alike is what
+ * produced the false positive noted above. Call-site detection is what covers
+ * the case this misses, so the two rules are complementary rather than
+ * redundant — a literal is checked if *either* says it is SQL.
+ */
+const SQL_KEYWORD =
+  /\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|ORDER BY|GROUP BY|IS NULL|IS NOT NULL)\b/;
+
+/**
+ * Every interpolated expression reaching SQL that is not on the allowlist.
+ *
+ * Separated from the check so it can be tested on its own. A security check
+ * nobody can exercise is a security check nobody knows the limits of, and this
+ * one had a false positive sitting in it undetected.
+ */
+export function sqlInterpolations(text: string): string[] {
+  const callSites = sqlCallSites(text);
+  const found: string[] = [];
+  for (const m of text.matchAll(/`([^`]*)`/g)) {
+    const body = m[1];
+    if (!callSites.has(m.index) && !SQL_KEYWORD.test(body)) continue;
+    for (const [, expr] of body.matchAll(/\$\{([^}]+)\}/g)) {
+      if (!SQL_SAFE_EXPRESSIONS.has(expr.trim())) found.push(expr.trim());
+    }
+  }
+  return found;
+}
+
 async function checkSqlInterpolation(fail: Fail) {
   const text = await read("src/serve.ts");
-  for (const [, body] of text.matchAll(/`([^`]*)`/g)) {
-    if (!/\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|ORDER BY|GROUP BY)\b/i.test(body)) continue;
-    for (const [, expr] of body.matchAll(/\$\{([^}]+)\}/g)) {
-      if (!SQL_SAFE_EXPRESSIONS.has(expr.trim())) {
-        fail(
-          "sql-injection",
-          `serve.ts interpolates "${expr.trim()}" into SQL without an allowlist`,
-        );
-      }
-    }
+  for (const expr of sqlInterpolations(text)) {
+    fail("sql-injection", `serve.ts interpolates "${expr}" into SQL without an allowlist`);
   }
   for (const name of ["SORTABLE", "GROUPABLE"]) {
     if (!new RegExp(`const ${name} = new Set\\(`).test(text)) {

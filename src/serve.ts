@@ -7,8 +7,9 @@
  */
 import { join } from "jsr:@std/path@1";
 import { DB_PATH, SERVE_PORT, WEB_DIR } from "./config.ts";
-import { openDb } from "./db.ts";
+import { loadDerivedSpells, openDb } from "./db.ts";
 import { type EventRow, foldCombatants } from "./combatants.ts";
+import { hydrate } from "./protections.ts";
 
 /** Column names can never be bound as parameters, so they are allowlisted. */
 const SORTABLE = new Set([
@@ -34,6 +35,26 @@ const SORTABLE = new Set([
   "target_summon",
   "raw",
 ]);
+/**
+ * Columns the free-text box searches, in the order the table shows them.
+ *
+ * A literal list for the same reason `SORTABLE` is one: it is interpolated into
+ * SQL, so it must never come from input. Text only — `LIKE '%41%'` on an amount
+ * matches 141 and 410 as well, which is worse than not searching it.
+ */
+const SEARCHABLE = [
+  "kind",
+  "actor_side",
+  "actor",
+  "target_side",
+  "target",
+  "summon",
+  "target_summon",
+  "detail",
+  "spell",
+  "raw",
+];
+
 const GROUPABLE = new Set([
   "kind",
   "actor",
@@ -79,6 +100,13 @@ function query<T>(sql: string, params: Param[] = []): T[] {
   return db.prepare(sql).all(...params).map((row) => ({ ...row })) as T[];
 }
 
+// Spell semantics read from the game files, merged *under* the hand-written
+// table so a judgement already made by a person is never displaced. Done
+// unconditionally rather than behind `import.meta.main`, because the API tests
+// drive `handle()` directly and should exercise the same lookup path the server
+// does. With no extraction run the table is empty and this is a no-op.
+hydrate(loadDerivedSpells(db));
+
 /**
  * Build the shared WHERE clause. Values are always bound, never interpolated.
  *
@@ -86,9 +114,17 @@ function query<T>(sql: string, params: Param[] = []): T[] {
  * the kind counts must respect the selected session, but must not be narrowed by
  * the selected kind, or picking a kind would leave that kind as the only option.
  */
-function filters(url: URL, omit?: string): { sql: string; params: Param[] } {
+function filters(
+  url: URL,
+  omit?: string,
+  notNull?: string,
+): { sql: string; params: Param[] } {
   const clauses: string[] = [];
   const params: Param[] = [];
+
+  // Drop rows with nothing in this column. The caller passes a name taken from
+  // the SORTABLE allowlist, never from input — see primarySortColumn().
+  if (notNull !== undefined) clauses.push(`${notNull} IS NOT NULL`);
 
   const eq = (param: string, column: string) => {
     if (param === omit) return;
@@ -123,8 +159,13 @@ function filters(url: URL, omit?: string): { sql: string; params: Param[] } {
 
   const q = url.searchParams.get("q");
   if (q) {
-    clauses.push("(raw LIKE ? OR actor LIKE ? OR target LIKE ?)");
-    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+    // Every text column the table can display, rather than a hand-picked three.
+    // Searching "opponent" used to find nothing at all, because the side
+    // columns were not covered and there is no filter dropdown for them either
+    // — so the value was on screen with no way to select it. Numeric columns
+    // are left out: a substring match on an amount finds 41 inside 141.
+    clauses.push(`(${SEARCHABLE.map((c) => `${c} LIKE ?`).join(" OR ")})`);
+    for (const _ of SEARCHABLE) params.push(`%${q}%`);
   }
 
   return { sql: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "", params };
@@ -141,16 +182,67 @@ function handleEvents(url: URL): Response {
   const rawOffset = Number(url.searchParams.get("offset") ?? "0");
   const offset = Number.isInteger(rawOffset) && rawOffset > 0 ? rawOffset : 0;
 
-  const [{ n: total }] = query<{ n: number }>(
+  // Matched the filters, before anything is dropped for being empty.
+  const [{ n: matched }] = query<{ n: number }>(
     `SELECT count(*) AS n FROM events ${where}`,
     params,
   );
+
+  // `hideEmpty=0` keeps them, for the rare case of wanting the full set while
+  // still ordering by a sparse column. Defaults on, since examining a column is
+  // the reason to sort by it.
+  const sortColumn = primarySortColumn(url);
+  const hideEmpty = sortColumn !== null && url.searchParams.get("hideEmpty") !== "0";
+
+  // Assembled by filters() rather than concatenated here, so the clause list and
+  // the WHERE keyword have one owner and an unfiltered query cannot produce a
+  // dangling "AND".
+  const scoped = hideEmpty
+    ? filters(url, undefined, sortColumn)
+    : { sql: where, params };
+
+  const [{ n: total }] = hideEmpty
+    ? query<{ n: number }>(`SELECT count(*) AS n FROM events ${scoped.sql}`, scoped.params)
+    : [{ n: matched }];
+
   const rows = query(
-    `SELECT * FROM events ${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
-    [...params, limit, offset],
+    `SELECT * FROM events ${scoped.sql} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+    [...scoped.params, limit, offset],
   );
 
-  return json({ total, limit, offset, orderBy, rows });
+  // Capture gaps in the current session scope, counted separately from the
+  // rows.
+  //
+  // `resync` marks a point where the engine replaced `combatLog` and rows
+  // pending emission were lost. It is the one kind that is not game output at
+  // all - it is this project's own instrumentation - so it does not belong in
+  // the event table, and it is hidden there by default. But a data-loss warning
+  // that is merely hidden is worse than one that looks out of place, so the
+  // count comes back here for the status line to report.
+  //
+  // Deliberately not run through filters(): the count means "gaps in what you
+  // are looking at", which is a property of the session, not of the kind or
+  // search currently narrowing the rows.
+  const session = url.searchParams.get("session");
+  const [{ n: gaps }] = session
+    ? query<{ n: number }>(
+      `SELECT count(*) AS n FROM events WHERE session = ? AND kind = 'resync'`,
+      [session],
+    )
+    : query<{ n: number }>(`SELECT count(*) AS n FROM events WHERE kind = 'resync'`);
+
+  return json({
+    total,
+    limit,
+    offset,
+    orderBy,
+    // Named so the UI can say what it dropped rather than leaving a smaller
+    // total looking like lost rows.
+    hiddenEmpty: matched - total,
+    emptyColumn: hideEmpty ? sortColumn : null,
+    gaps,
+    rows,
+  });
 }
 
 /** How many sort keys a request may specify. */
@@ -162,8 +254,15 @@ const MAX_SORT_KEYS = 4;
  * Column names cannot be bound as parameters, so every one is checked against
  * SORTABLE and anything unrecognized is dropped rather than interpolated.
  */
-function orderClause(url: URL): string {
-  const terms: string[] = [];
+/**
+ * The requested sort, validated against `SORTABLE`.
+ *
+ * One parse shared by the ordering and by the empty-row filter, so the two
+ * cannot disagree about which column is primary — and so a column name reaches
+ * SQL from exactly one allowlist check.
+ */
+function sortKeys(url: URL): Array<{ column: string; dir: "ASC" | "DESC" }> {
+  const keys: Array<{ column: string; dir: "ASC" | "DESC" }> = [];
   const seen = new Set<string>();
 
   for (const part of (url.searchParams.get("sort") ?? "").split(",")) {
@@ -171,14 +270,63 @@ function orderClause(url: URL): string {
     const column = rawColumn?.trim() ?? "";
     if (!SORTABLE.has(column) || seen.has(column)) continue;
     seen.add(column);
-    terms.push(`${column} ${(rawDir ?? "asc").trim().toLowerCase() === "desc" ? "DESC" : "ASC"}`);
-    if (terms.length === MAX_SORT_KEYS) break;
+    keys.push({
+      column,
+      dir: (rawDir ?? "asc").trim().toLowerCase() === "desc" ? "DESC" : "ASC",
+    });
+    if (keys.length === MAX_SORT_KEYS) break;
+  }
+  return keys;
+}
+
+function orderClause(url: URL): string {
+  const terms: string[] = [];
+  for (const { column, dir } of sortKeys(url)) {
+    // Empties last, whichever direction. Redundant while the primary column is
+    // also being filtered for nulls, but secondary keys are not filtered and
+    // SQLite sorts NULL first, so without this a sparse tiebreaker still leads
+    // with blanks.
+    terms.push(`${column} IS NULL`, `${column} ${dir}`);
   }
 
-  // Capture order is the natural reading order and the only fully stable one -
-  // always last, so paging cannot repeat or skip rows that tie on every key.
-  terms.push("session ASC", "id ASC");
+  // Newest first, always last in the chain.
+  //
+  // Two jobs at once. With no sort chosen this *is* the order, so the table
+  // opens on the most recent events - which is what you want after a fight,
+  // rather than the start of the session. And as the final tiebreak it means
+  // rows read newest-first inside whatever grouping is above it, so sorting by
+  // side shows each side's latest activity first.
+  //
+  // `id` is the tap's own sequence number, so it is exactly capture order and
+  // the only fully stable key. Keeping it last means paging cannot repeat or
+  // skip rows that tie on everything else.
+  //
+  // Only the events table. The folds in serve.ts and patterns.ts replay events
+  // in sequence and must stay ascending, which is why they order by id
+  // themselves rather than going through here.
+  terms.push("session DESC", "id DESC");
   return terms.join(", ");
+}
+
+/**
+ * Rows with nothing in the column being sorted by are dropped.
+ *
+ * Sorting by a column is how you examine it, and most columns here are sparse:
+ * only damage rows carry an `amount`, only some events name a side. Keeping the
+ * empty ones parks a block of blank cells at one end of every page for no
+ * purpose.
+ *
+ * Only the *primary* key is filtered. Later keys are tiebreakers rather than
+ * the thing under examination, and filtering on all of them compounds fast —
+ * sorting by side then spell would quietly reduce the table to spell-attributed
+ * damage rows.
+ *
+ * The count dropped is reported back, because a filter that silently changes
+ * the row total is the kind of thing that gets mistaken for missing data.
+ */
+function primarySortColumn(url: URL): string | null {
+  const [first] = sortKeys(url);
+  return first === undefined ? null : first.column;
 }
 
 function handleGroups(url: URL): Response {

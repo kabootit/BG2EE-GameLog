@@ -22,7 +22,21 @@ export type Category =
   /** Makes the creature stronger without blocking anything. */
   | "buff"
   /** Not state at all: an event that strips state. Drives clearing. */
-  | "dispel";
+  | "dispel"
+  /**
+   * Something is helping this creature, defensive or offensive unknown.
+   *
+   * Only ever produced by `deno task extract`, never written by hand. The game
+   * files cannot separate `protection` from `buff` — the two share ten effect
+   * opcodes because the engine has no concept of "protective", and a classifier
+   * trained to tell them apart was confidently wrong 12 times out of 15. This
+   * is the honest answer for a spell nobody has judged: better than no tag, and
+   * far better than a wrong one.
+   *
+   * Hand-written entries keep `protection` or `buff`, so this never displaces a
+   * judgement that has already been made.
+   */
+  | "warded";
 
 /** What a protection stops. Empty for non-protections. */
 export type Blocks =
@@ -86,6 +100,18 @@ export interface Effect {
   effect?: string;
   /** How to get past it. The reason a player opens an inspector at all. */
   counter?: string;
+  /**
+   * Describes an observed creature property, not a castable spell.
+   *
+   * These come from probe results — an attack or spell failing tells you
+   * something is up without naming a spell. They must not be matched against
+   * the game files, because a coincidental name clash reads as a data
+   * disagreement: "Magic Resistance" here means a creature's innate percentage,
+   * while `sppr509` is a priest spell of the same display name that grants it
+   * temporarily. The spell is dispellable and the innate property is not, so
+   * matching them reported a contradiction that does not exist.
+   */
+  probeOnly?: boolean;
 }
 
 const TABLE: Effect[] = [
@@ -103,8 +129,14 @@ const TABLE: Effect[] = [
     effect: "Protected from Magical Weapons",
     category: "protection",
     blocks: ["weapons"],
-    dispellable: false,
-    counter: "non-magical weapons still land; short duration, wait it out",
+    // Corrected from `false` against the installed game files. `spwi611`'s core
+    // effect is opcode 120 (immunity to weapons) with dispelResist=3, and every
+    // one of its non-cosmetic effects agrees — so a dispel does remove this,
+    // and the previous hand-written value was simply wrong. Kept as a comment
+    // because "PFMW cannot be dispelled" is widely repeated and someone will
+    // reasonably want to change it back. `deno task extract` re-checks it.
+    dispellable: true,
+    counter: "non-magical weapons still land; dispellable, and Breach strips it",
   },
   {
     name: "Stoneskin",
@@ -175,6 +207,7 @@ const TABLE: Effect[] = [
     category: "protection",
     blocks: ["physical"],
     dispellable: false,
+    probeOnly: true,
     counter: "try another damage type",
   },
   {
@@ -190,6 +223,7 @@ const TABLE: Effect[] = [
     category: "protection",
     blocks: ["magic"],
     dispellable: false,
+    probeOnly: true,
     counter: "innate percentage; use non-magical damage",
   },
   {
@@ -197,6 +231,7 @@ const TABLE: Effect[] = [
     category: "protection",
     blocks: ["spells"],
     dispellable: false,
+    probeOnly: true,
     counter: "something absorbed it; strip protections first",
   },
 
@@ -424,9 +459,83 @@ for (const e of TABLE) {
   if (e.effect) BY_NAME.set(norm(e.effect), e);
 }
 
+/**
+ * Keys the hand-written table claims, snapshotted before any hydration.
+ *
+ * Needed so `hydrate()` can tell "already judged by a person" from "added by an
+ * earlier hydrate", and so re-hydrating is idempotent rather than letting
+ * whichever row arrived first win permanently.
+ */
+const HAND_KEYS = new Set(BY_NAME.keys());
+
+/** A spell as `deno task extract` read it out of the game files. */
+export interface DerivedSpell {
+  /** Display name — what a cast line prints. */
+  name: string;
+  /** The landed-effect message, when the spell prints one. */
+  effect?: string;
+  category: Category;
+  dispellable: boolean;
+  strips?: Strips;
+}
+
+/**
+ * Merge spell data read from the game files under the hand-written table.
+ *
+ * Call once, after `openDb()`. Deliberately *under*: a hand-written entry
+ * always wins, because it carries judgements the files cannot express — the
+ * protection/buff distinction, and the `counter` advice that is the reason a
+ * player opens the view at all.
+ *
+ * Not calling it is a supported state, and it is what the fold's own tests do:
+ * without hydration the lookups behave exactly as they did before any of this
+ * existed, so a clone with no game install still works off the hand-written
+ * table, and the existing test suite keeps passing untouched.
+ *
+ * `blocks` is deliberately absent from `DerivedSpell`. What a protection stops
+ * is a player-facing idea with no single field behind it, so derived entries get
+ * an empty list, which means a targeted removal — Breach, Spell Thrust — will
+ * not clear them. Conservative on purpose: showing a stale observation is a
+ * smaller error than inventing what a spell blocks.
+ */
+export function hydrate(rows: DerivedSpell[]): void {
+  for (const row of rows) {
+    const effect: Effect = {
+      name: row.name,
+      category: row.category,
+      blocks: [],
+      dispellable: row.dispellable,
+      ...(row.strips === undefined ? {} : { strips: row.strips }),
+      ...(row.effect === undefined ? {} : { effect: row.effect }),
+    };
+    for (const key of [norm(row.name), row.effect === undefined ? null : norm(row.effect)]) {
+      if (key === null || key === "" || HAND_KEYS.has(key)) continue;
+      BY_NAME.set(key, effect);
+    }
+  }
+}
+
+/** How many names are known, hand-written plus hydrated. For reporting. */
+export function knownCount(): { hand: number; total: number } {
+  return { hand: HAND_KEYS.size, total: BY_NAME.size };
+}
+
 /** Case- and spacing-insensitive, since the engine's wording varies. */
 function norm(name: string): string {
   return name.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * The hand-written entries, exposed for the calibration pass in `extract.ts`.
+ *
+ * These are labels, and that is their value: `extract.ts` reads the effect
+ * opcodes of each of these spells out of the game files and works out which
+ * opcodes distinguish the categories already assigned here. Writing an opcode
+ * table by hand instead would reproduce exactly the unevidenced guessing this
+ * table is being replaced to remove.
+ */
+export function handWritten(): readonly Effect[] {
+  return TABLE;
 }
 
 /** Look a spell or effect name up. Null means "no semantics known". */

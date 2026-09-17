@@ -33,6 +33,16 @@
     <option value="session">session</option>
   </select></label>
   <input type="search" id="q" placeholder="search text, actor, target">
+  <!-- Rows back from the newest, matching the combatants view's idiom. Events
+       sort newest-first by default, so the offset already reads as "how far
+       back" without needing the id arithmetic that view does. Literal values so
+       the inputs are never blank before the first fetch resolves. -->
+  <label>from <input type="number" id="offset" value="0" min="0" step="100"></label>
+  <label>show <input type="number" id="limit" value="500" min="1" max="5000" step="100"></label>
+  <span class="hint" id="bounds">back</span>
+  <button id="newer" title="towards the most recent">&lsaquo;</button>
+  <button id="older" title="further back">&rsaquo;</button>
+  <button id="latest" title="back to the most recent events">latest</button>
   <div class="spacer"></div>
   <label><input type="checkbox" id="battle" checked> battle only</label>
   <label><input type="checkbox" id="auto"> auto-refresh</label>
@@ -41,13 +51,16 @@
 </div>
 
 <div class="status" id="status"></div>
+<!-- Capture gaps. Its own line rather than appended to the status, because it
+     is a warning about the data itself and not a description of the page. -->
+<div class="status warn" id="gaps" hidden></div>
 <div class="wrap"><table><thead id="head"></thead><tbody id="body"></tbody></table></div>
 
 <!-- type="module" is required: this script uses top-level await, which is a
      syntax error in a classic script and silently prevents the whole block from
      parsing, leaving the page rendered but completely inert. -->
 <script type="module">
-import { $, esc, fillSelect, initShell, setStatus } from "/common.js";
+import { $, esc, fillSelect, initShell, nextSort, setStatus } from "/common.js";
 
 /** Sort keys, most significant first. Click a header to add, cycle, then drop it. */
 const state = { sort: [], offset: 0, limit: 500 };
@@ -90,8 +103,16 @@ const GROUP_COLUMNS = [
  * Kinds hidden by default: narration and bookkeeping, plus the per-swing roll
  * breakdowns, which are two extra rows per attack and drown the timeline.
  * Still reachable by selecting the kind explicitly.
+ *
+ * `resync` is the odd one out, and the reason it is listed here. Every other
+ * kind is game output; that one is this project's own marker for a point where
+ * the engine replaced `combatLog` and rows pending emission were lost. It has
+ * no actor, no target and nothing in any derived column, and its `raw` is not
+ * the game's text at all — so as a table row it reads as a broken event rather
+ * than as the warning it is. The count goes to the status line instead, because
+ * a data-loss warning must not simply vanish.
  */
-const HIDDEN_KINDS = ["pause", "dialogue", "other", "tohit", "damageroll"];
+const HIDDEN_KINDS = ["pause", "dialogue", "other", "tohit", "damageroll", "resync"];
 
 function params() {
   const p = new URLSearchParams();
@@ -137,21 +158,12 @@ function renderHead(columns, sortable) {
   $("clearsort").disabled = state.sort.length === 0;
   if (!sortable) return;
 
+  // The chain transition lives in common.js as a pure function, so it can be
+  // tested. See nextSort() there for why a click promotes rather than appends.
   for (const th of $("head").querySelectorAll("th[data-sort]")) {
     th.onclick = () => {
-      const key = th.dataset.sort;
-      const i = sortIndex(key);
-      if (i === -1) {
-        // New keys join as least significant. When the chain is full the last
-        // one gives way, so the primary sort is never disturbed by a stray click.
-        if (state.sort.length >= MAX_SORT_KEYS) state.sort.pop();
-        state.sort.push({ key, dir: "asc" });
-      } else if (state.sort[i].dir === "asc") {
-        state.sort[i].dir = "desc";
-      } else {
-        state.sort.splice(i, 1); // third click drops this key from the chain
-      }
-      state.offset = 0;
+      state.sort = nextSort(state.sort, th.dataset.sort, MAX_SORT_KEYS);
+      resetPaging();
       load();
     };
   }
@@ -212,22 +224,105 @@ async function load() {
   renderHead(columns, true);
   renderRows(columns, data.rows);
 
+  // Reflect what the server actually used, including its clamping, so the
+  // inputs never disagree with the rows on screen. Skipped mid-edit.
+  if (!rangeTouched) {
+    $("offset").value = data.offset;
+    $("limit").value = data.limit;
+  }
+  $("offset").max = Math.max(0, data.total - 1);
+  $("bounds").textContent = `back of ${data.total}`;
+  $("newer").disabled = data.offset === 0;
+  $("older").disabled = data.offset + data.rows.length >= data.total;
+
   const from = data.total === 0 ? 0 : data.offset + 1;
-  setStatus(`${from}–${data.offset + data.rows.length} of ${data.total}`);
+  // Sorting by a column drops the rows that have nothing in it. Said out loud,
+  // because a total that shrinks when you click a header otherwise reads as
+  // missing data rather than as a filter doing its job.
+  const dropped = data.hiddenEmpty > 0
+    ? ` · ${data.hiddenEmpty} with no ${label(data.emptyColumn)} hidden`
+    : "";
+  setStatus(`${from}–${data.offset + data.rows.length} of ${data.total}${dropped}`);
+
+  // Capture gaps, reported rather than shown as rows. Contiguous ids do not
+  // prove completeness — the engine can replace combatLog and lose whatever was
+  // pending — so this is the only honest signal that a stretch is incomplete.
+  const gaps = $("gaps");
+  gaps.hidden = data.gaps === 0;
+  gaps.textContent = data.gaps === 1
+    ? "1 capture gap in this session"
+    : `${data.gaps} capture gaps in this session`;
+  gaps.title = "The engine replaced its message table at these points and rows " +
+    "pending capture were lost. Select kind=resync to see where.";
+}
+
+/**
+ * True while the offset/count inputs are being typed into, so a reload does not
+ * overwrite a half-entered number with the clamped value of the previous one.
+ */
+let rangeTouched = false;
+
+// Debounced: typing "1200" would otherwise fire on every digit, and each pass
+// would clamp the half-typed number. Same handling as the combatants range.
+let rangeDebounce = null;
+for (const id of ["offset", "limit"]) {
+  $(id).oninput = () => {
+    rangeTouched = true;
+    clearTimeout(rangeDebounce);
+    rangeDebounce = setTimeout(async () => {
+      state.offset = Math.max(0, Number($("offset").value) || 0);
+      state.limit = Math.min(Math.max(Number($("limit").value) || 500, 1), 5000);
+      await load();
+      rangeTouched = false;
+    }, 400);
+  };
+}
+
+/** Step by a whole page, which is what the count input is for. */
+const step = (by) => () => {
+  state.offset = Math.max(0, state.offset + by * state.limit);
+  rangeTouched = false;
+  load();
+};
+$("older").onclick = step(1);
+$("newer").onclick = step(-1);
+$("latest").onclick = () => {
+  state.offset = 0;
+  rangeTouched = false;
+  load();
+};
+
+/** Column heading for a key, so messages match what the header says. */
+function label(key) {
+  return EVENT_COLUMNS.find((c) => c.key === key)?.label ?? key;
+}
+
+/**
+ * A filter changed, so go back to the newest rows.
+ *
+ * Also drops any pending range-input debounce. Without that, typing in the
+ * offset box and changing a filter within the same 400ms let the debounce fire
+ * afterwards and put the old offset back, leaving the inputs describing a page
+ * the table was not showing.
+ */
+function resetPaging() {
+  clearTimeout(rangeDebounce);
+  rangeTouched = false;
+  state.offset = 0;
 }
 
 let debounce = null;
 $("q").oninput = () => {
   clearTimeout(debounce);
   debounce = setTimeout(() => {
-    state.offset = 0;
+    resetPaging();
     load();
   }, 200);
 };
 
 for (const id of ["kind", "groupby"]) {
   $(id).onchange = () => {
-    state.offset = 0;
+    resetPaging();
     load();
   };
 }
@@ -242,13 +337,13 @@ $("battle").onchange = () => {
     const hidden = new Set(EVENT_COLUMNS.filter((c) => c.verbose).map((c) => c.key));
     state.sort = state.sort.filter((s) => !hidden.has(s.key));
   }
-  state.offset = 0;
+  resetPaging();
   load();
 };
 
 $("clearsort").onclick = () => {
   state.sort = [];
-  state.offset = 0;
+  resetPaging();
   load();
 };
 

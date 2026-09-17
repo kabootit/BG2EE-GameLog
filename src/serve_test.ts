@@ -13,21 +13,36 @@ const tmp = await Deno.makeTempDir();
 Deno.env.set("BG2EE_DB", join(tmp, "test.db"));
 
 const { makeInserter, openDb } = await import("./db.ts");
-const { EventLinker, parseLine } = await import("./parse.ts");
+const { EventLinker, parseLine, SideResolver } = await import("./parse.ts");
 const { handle } = await import("./serve.ts");
 
-/** Insert lines as a named session, through the real parse + link path. */
-function seed(session: string, lines: string[], startId = 1) {
+/**
+ * Insert lines as a named session, through the real parse + link path.
+ *
+ * With a roster given, sides are resolved the way `import.ts` does it — in two
+ * passes, because who is on which side is only knowable once the whole session
+ * has been seen. Needed for anything testing `actor_side`, whose value is the
+ * one thing in a row that does not also appear in `raw`.
+ */
+function seed(session: string, lines: string[], startId = 1, roster: string[] = []) {
   const db = openDb();
   const insert = makeInserter(db);
   const linker = new EventLinker();
-  lines.forEach((text, i) => {
+  const sides = new SideResolver();
+  sides.addRoster(roster);
+
+  const events = lines.map((text, i) => {
     const id = startId + i;
     const e = parseLine(
       `2026-01-01 00:00:00.000 B[1:2] INFO: LUA: A7LOG\t${id}\t${id * 60}\t${id * 1000}\tDay 1\tWORLD\t${text}`,
     );
-    if (e) insert(session, linker.apply(e));
-  });
+    if (e === null) return null;
+    const linked = linker.apply(e);
+    sides.observe(linked);
+    return linked;
+  }).filter((e) => e !== null);
+
+  for (const e of events) insert(session, roster.length > 0 ? sides.label(e) : e);
   db.close();
 }
 
@@ -45,6 +60,22 @@ seed("session-20260202-000000.log", [
   "Recent Foe: Stoneskin",
   "Recent Foe: Attacks Jaheira",
 ]);
+
+/**
+ * A session with resolved sides, for the sort and search cases.
+ *
+ * Deliberately named older than both of the above so it is never "the newest
+ * session" and cannot disturb the range tests, which pick that implicitly. It
+ * is only ever queried by name.
+ */
+const SIDED = "session-20251231-000000.log";
+seed(SIDED, [
+  "Wyvern: Takes 9 piercing damage from Jaheira",
+  "Wyvern: Takes 7 slashing damage from Jaheira",
+  "Jaheira: Takes 4 piercing damage from Wyvern",
+  // No actor at all, so no side: this is the row that must sort last, not first.
+  "Your journal has been updated.",
+], 1, ["Jaheira"]);
 
 Deno.test("with no session given, the newest is used", async () => {
   const d = await get("api/combatants?window=400");
@@ -173,7 +204,7 @@ Deno.test("an unknown group-by column is refused, not interpolated", async () =>
 Deno.test("sortable columns are allowlisted", async () => {
   // An unrecognized sort key is dropped rather than reaching the SQL.
   const d = await get("api/events?sort=evil;DROP:desc&limit=1");
-  assertEquals(d.orderBy, "session ASC, id ASC");
+  assertEquals(d.orderBy, "session DESC, id DESC");
 });
 
 Deno.test("unknown routes 404", async () => {
@@ -238,4 +269,185 @@ Deno.test("pages are served no-store so an edit shows on reload", async () => {
   const res = await handle(new Request("http://127.0.0.1/events"));
   assertEquals(res.headers.get("cache-control"), "no-store");
   await res.body?.cancel();
+});
+
+// --- sorting and searching the side columns -------------------------------
+//
+// Both reported from use: the side column "doesn't sort nor does the search
+// work on it".
+
+Deno.test("free-text search covers the side columns", async () => {
+  // `actor_side` is the one column whose value is not also inside `raw`, so it
+  // was invisible to a search over raw/actor/target - and there is no filter
+  // dropdown for it either, leaving the value on screen with no way to select
+  // it. Searching for it found nothing at all.
+  const d = await get(`api/events?session=${SIDED}&q=opponent`);
+  assertEquals(d.total, 3, "the wyvern's three rows");
+  for (const row of d.rows) {
+    assertEquals(
+      row.actor_side === "opponent" || row.target_side === "opponent",
+      true,
+      row.raw,
+    );
+  }
+});
+
+Deno.test("search still matches the raw text and the derived columns", async () => {
+  // Widening must not have cost the original behaviour.
+  assertEquals((await get(`api/events?session=${SIDED}&q=piercing`)).total, 2);
+  assertEquals((await get(`api/events?session=${SIDED}&q=Jaheira`)).total, 3);
+  assertEquals((await get(`api/events?session=${SIDED}&q=journal`)).total, 1);
+});
+
+Deno.test("sorting a sparse column never leads with empty rows", async () => {
+  // The bug behind "doesn't sort". SQLite orders NULL first, and most columns
+  // here are sparse, so ascending by side filled the first page with blanks —
+  // which reads as sorting being broken rather than as the empties coming
+  // first. They are dropped outright now, but the ordering still has to be a
+  // real ordering rather than merely non-null first.
+  const asc = await get(`api/events?session=${SIDED}&sort=actor_side:asc`);
+  assertEquals(asc.rows[0].actor_side, "opponent");
+
+  const desc = await get(`api/events?session=${SIDED}&sort=actor_side:desc`);
+  assertEquals(desc.rows[0].actor_side, "party");
+
+  // With the empties kept, they must still come last in both directions — which
+  // is why orderClause emits its own IS NULL terms even though the primary
+  // column is normally filtered.
+  for (const dir of ["asc", "desc"]) {
+    const kept = await get(`api/events?session=${SIDED}&sort=actor_side:${dir}&hideEmpty=0`);
+    assertEquals(kept.rows[0].actor_side !== null, true, dir);
+    assertEquals(kept.rows[kept.rows.length - 1].actor_side, null, dir);
+  }
+});
+
+Deno.test("the sort-key cap counts columns, not SQL terms", async () => {
+  // Each key now contributes two terms - "col IS NULL" then "col DIR" - so a
+  // cap on terms would silently halve how many columns a user can chain.
+  const d = await get(
+    "api/events?sort=kind:asc,actor:asc,target:asc,amount:asc,roll:asc&limit=1",
+  );
+  const columns = d.orderBy.split(", ").filter((t: string) => t.endsWith(" IS NULL"));
+  assertEquals(columns.length, 4, d.orderBy);
+  assertEquals(d.orderBy.includes("roll"), false, "the fifth key is dropped");
+  // Reverse capture order always closes the chain, so paging cannot repeat
+  // rows and each group reads newest-first.
+  assertEquals(d.orderBy.endsWith("session DESC, id DESC"), true, d.orderBy);
+});
+
+Deno.test("sorting by a column drops the rows with nothing in it", async () => {
+  // Sorting by a column is how you examine it, and most columns here are
+  // sparse, so the empties were just a block of blank cells at one end.
+  // The SIDED session has three rows with a side and one journal line with no
+  // actor at all.
+  const d = await get(`api/events?session=${SIDED}&sort=actor_side:asc`);
+  assertEquals(d.total, 3);
+  assertEquals(d.hiddenEmpty, 1);
+  assertEquals(d.emptyColumn, "actor_side");
+  for (const row of d.rows) assertEquals(row.actor_side !== null, true, row.raw);
+});
+
+Deno.test("the dropped count is reported, not silently applied", async () => {
+  // A total that shrinks when you click a header reads as missing data unless
+  // something says otherwise, so the number has to come back with the rows.
+  const plain = await get(`api/events?session=${SIDED}`);
+  const sorted = await get(`api/events?session=${SIDED}&sort=actor_side:asc`);
+  assertEquals(plain.total, sorted.total + sorted.hiddenEmpty);
+  assertEquals(plain.hiddenEmpty, 0, "nothing is dropped without a sort");
+  assertEquals(plain.emptyColumn, null);
+});
+
+Deno.test("hideEmpty=0 keeps the empty rows", async () => {
+  const d = await get(`api/events?session=${SIDED}&sort=actor_side:asc&hideEmpty=0`);
+  assertEquals(d.total, 4);
+  assertEquals(d.hiddenEmpty, 0);
+  assertEquals(d.emptyColumn, null);
+  // Still ordered with the empties last, which is why orderClause keeps its
+  // own IS NULL terms even though the primary column is normally filtered.
+  assertEquals(d.rows[d.rows.length - 1].actor_side, null);
+});
+
+Deno.test("only the primary sort column is filtered", async () => {
+  // Filtering every key in the chain compounds fast: side then spell would
+  // quietly reduce the table to spell-attributed damage rows.
+  const d = await get(`api/events?session=${SIDED}&sort=actor_side:asc,spell:asc`);
+  assertEquals(d.emptyColumn, "actor_side");
+  assertEquals(d.total, 3, "not narrowed further by the spell key");
+  assertEquals(d.rows.some((r: { spell: string | null }) => r.spell === null), true);
+});
+
+Deno.test("sorting by a column that is never empty drops nothing", async () => {
+  const d = await get(`api/events?session=${SIDED}&sort=id:desc`);
+  assertEquals(d.total, 4);
+  assertEquals(d.hiddenEmpty, 0);
+});
+
+Deno.test("a rejected sort key does not filter anything", async () => {
+  // No valid primary key means no column to filter on, so the row set must be
+  // untouched rather than falling back to some default column.
+  const d = await get(`api/events?session=${SIDED}&sort=evil;DROP:desc`);
+  assertEquals(d.total, 4);
+  assertEquals(d.emptyColumn, null);
+  assertEquals(d.orderBy, "session DESC, id DESC");
+});
+
+Deno.test("events default to newest first", async () => {
+  // Opening the table on the start of the session is the wrong end: after a
+  // fight what you want is what just happened.
+  const d = await get(`api/events?session=${SIDED}`);
+  assertEquals(d.rows.map((r: { id: number }) => r.id), [4, 3, 2, 1]);
+  assertEquals(d.orderBy, "session DESC, id DESC");
+});
+
+Deno.test("reverse time is the final tiebreak under any sort", async () => {
+  // "Always" reverse-chronological: within each group of whatever is sorted
+  // above it, the latest rows come first.
+  //
+  // In this session ids 1-2 are Jaheira hitting the wyvern (actor party) and id
+  // 3 is the wyvern hitting back (actor opponent).
+  const d = await get(`api/events?session=${SIDED}&sort=actor_side:asc`);
+  assertEquals(
+    d.rows.map((r: { id: number; actor_side: string }) => `${r.actor_side}:${r.id}`),
+    ["opponent:3", "party:2", "party:1"],
+    "opponent group first, and newest first inside the party group",
+  );
+});
+
+Deno.test("an explicit ascending sort on id still wins", async () => {
+  // The default must be a default, not an override: the trailing DESC term
+  // comes after the chosen key, so SQLite honours the explicit one.
+  const d = await get(`api/events?session=${SIDED}&sort=id:asc`);
+  assertEquals(d.rows.map((r: { id: number }) => r.id), [1, 2, 3, 4]);
+});
+
+Deno.test("capture-gap markers are counted, not left among the events", async () => {
+  // `resync` is the one kind that is not game output - it is this project's own
+  // marker for the engine replacing combatLog and losing whatever was pending.
+  // It carries no actor, target or derived column, so as a table row it reads
+  // as a broken event. It is hidden in the view; the count has to survive that,
+  // because a data-loss warning that merely disappears is worse than one that
+  // looks out of place.
+  seed("session-20251230-000000.log", [
+    "Wyvern: Takes 9 piercing damage from Jaheira",
+    "capture resynced: combatLog was replaced",
+    "Wyvern: Takes 7 slashing damage from Jaheira",
+  ]);
+
+  const all = await get("api/events?session=session-20251230-000000.log");
+  assertEquals(all.gaps, 1);
+  assertEquals(all.total, 3);
+
+  // With the kind excluded the way "battle only" does, the row goes but the
+  // count stays.
+  const battle = await get(
+    "api/events?session=session-20251230-000000.log&exclude=resync",
+  );
+  assertEquals(battle.total, 2, "the marker is not among the rows");
+  assertEquals(battle.rows.some((r: { kind: string }) => r.kind === "resync"), false);
+  assertEquals(battle.gaps, 1, "but it is still reported");
+});
+
+Deno.test("a session with no gaps reports none", async () => {
+  const d = await get(`api/events?session=${SIDED}`);
+  assertEquals(d.gaps, 0);
 });
