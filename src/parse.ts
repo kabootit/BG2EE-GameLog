@@ -489,7 +489,81 @@ export class SideResolver {
     if (!this.dirty) return this.sides;
 
     const sides = new Map<string, Side>();
-    const allies = new Set([...this.roster, ...this.autoPaused]);
+    const members = new Set([...this.roster, ...this.autoPaused]);
+    for (const name of members) sides.set(name, "party");
+
+    // How often each pair traded blows, in both directions. Counts matter, not
+    // just presence: a single stray hit has to be outweighable by a sustained
+    // fight, which is the whole reason this is weighted.
+    const weights = new Map<string, Map<string, number>>();
+    const bump = (a: string, b: string) => {
+      const row = weights.get(a) ?? new Map<string, number>();
+      row.set(b, (row.get(b) ?? 0) + 1);
+      weights.set(a, row);
+    };
+    for (const [a, b] of this.edges) {
+      bump(a, b);
+      bump(b, a);
+    }
+
+    /**
+     * Assign the unknown creatures by weight of hostile evidence, repeatedly.
+     *
+     * Hostility points away from your own side, so fighting known opponents is
+     * evidence of being party and vice versa. Three things this has to survive,
+     * all of them observed in one skirmish:
+     *
+     *   - **Friendly fire.** A summoned Fire Elemental took 8 hits from a Wyvern
+     *     and 1 from Neera's area spell. Counting any party edge as decisive
+     *     made it an opponent on the strength of that one hit.
+     *   - **Summons that never touch a party member.** A Greater Bearwere
+     *     fighting only Wyverns and Harpies has no roster edge at all, so a
+     *     roster-only rule leaves it neutral. It is reachable only once the
+     *     Wyverns are known to be opponents, which takes another round.
+     *   - **Enemies fighting each other.** Wyverns bit and poisoned the Harpies
+     *     30 times, more than the party hit the Harpies. Nothing was charmed;
+     *     the engine simply lets monster factions be hostile to one another. So
+     *     "fights opponents" cannot be treated as proof of being party.
+     *
+     * The last one is why evidence is weighted by *how well the other end is
+     * known*, not just by how often. Roster membership is observed; a side
+     * reached by inference is a guess built on other guesses, and counting the
+     * two equally let 34 inferred-opponent hits outvote 27 hits from creatures
+     * known for certain to be party. Weighting direct observation twice as
+     * heavily settles all three cases at once.
+     */
+    const OBSERVED = 2;
+    const INFERRED = 1;
+    const MAX_ROUNDS = 8;
+
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      let changed = false;
+      for (const [name, row] of weights) {
+        // Roster membership is observed, not inferred, and outranks any fight.
+        // A charmed member turning on the party stays a member.
+        if (members.has(name)) continue;
+
+        let againstParty = 0;
+        let againstOpponents = 0;
+        for (const [other, n] of row) {
+          const side = sides.get(other);
+          if (side === undefined) continue;
+          const confidence = members.has(other) ? OBSERVED : INFERRED;
+          if (side === "party") againstParty += n * confidence;
+          else if (side === "opponent") againstOpponents += n * confidence;
+        }
+        if (againstParty === 0 && againstOpponents === 0) continue;
+
+        // A tie goes to opponent: for a threat display, mistaking an ally for
+        // an enemy is the cheaper error.
+        const next: Side = againstOpponents > againstParty ? "party" : "opponent";
+        if (sides.get(name) !== next) {
+          sides.set(name, next);
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
 
     // Summons fight on the party's side, so they *are* party for the purpose of
     // `side`. Which of them were summoned is tracked separately, for the summon
@@ -500,19 +574,17 @@ export class SideResolver {
     // the stand-in, since party members answer when clicked and summons never
     // say anything. A member who is never clicked would be taken for a summon,
     // which the roster corrects for good.
+    //
+    // Anything on the party's side that is not a roster member is a summon,
+    // including creatures reached by inference above rather than by auto-pause.
+    // A shapeshifted druid lands here too — the engine prints "Greater Bearwere"
+    // with nothing tying it back to Cernd — which is wrong in name only, and far
+    // better than the alternative of calling it an enemy.
     this.summons = new Set<string>();
-    for (const name of allies) {
-      sides.set(name, "party");
+    for (const [name, side] of sides) {
+      if (side !== "party") continue;
       const isMember = this.roster.size > 0 ? this.roster.has(name) : this.spoke.has(name);
       if (!isMember) this.summons.add(name);
-    }
-
-    // Anyone unaccounted for who trades blows with that side is an opponent.
-    // One pass is enough: nothing here ever adds to `allies`.
-    for (const [a, b] of this.edges) {
-      for (const [x, y] of [[a, b], [b, a]] as const) {
-        if (allies.has(y) && !sides.has(x)) sides.set(x, "opponent");
-      }
     }
 
     this.sides = sides;
