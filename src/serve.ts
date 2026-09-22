@@ -33,6 +33,7 @@ const SORTABLE = new Set([
   "target_side",
   "summon",
   "target_summon",
+  "saved",
   "raw",
 ]);
 /**
@@ -67,6 +68,11 @@ const GROUPABLE = new Set([
   "summon",
   "target_summon",
   "screen",
+  // Groupable, though it currently has one value. No verdict is recorded — a
+  // save row is a success by construction, since the engine prints a save line
+  // only when the save is made (see VERDICTS_TRUSTED in parse.ts). Kept
+  // allowlisted so it works the moment a verdict means something again.
+  "saved",
   "session",
 ]);
 
@@ -101,7 +107,7 @@ function query<T>(sql: string, params: Param[] = []): T[] {
 }
 
 // Spell semantics read from the game files, merged *under* the hand-written
-// table so a judgement already made by a person is never displaced. Done
+// table so a judgment already made by a person is never displaced. Done
 // unconditionally rather than behind `import.meta.main`, because the API tests
 // drive `handle()` directly and should exercise the same lookup path the server
 // does. With no extraction run the table is empty and this is a no-op.
@@ -117,14 +123,19 @@ hydrate(loadDerivedSpells(db));
 function filters(
   url: URL,
   omit?: string,
-  notNull?: string,
+  // Accepts null as well as undefined on purpose: callers get this from
+  // emptyFilterColumn(), which returns null for "no column". An undefined-only
+  // signature meant a null slipped through the guard below and emitted
+  // "null IS NOT NULL", which is never true - it silently zeroed every facet
+  // count while the rows themselves looked fine.
+  notNull?: string | null,
 ): { sql: string; params: Param[] } {
   const clauses: string[] = [];
   const params: Param[] = [];
 
   // Drop rows with nothing in this column. The caller passes a name taken from
   // the SORTABLE allowlist, never from input — see primarySortColumn().
-  if (notNull !== undefined) clauses.push(`${notNull} IS NOT NULL`);
+  if (notNull !== undefined && notNull !== null) clauses.push(`${notNull} IS NOT NULL`);
 
   const eq = (param: string, column: string) => {
     if (param === omit) return;
@@ -190,18 +201,18 @@ function handleEvents(url: URL): Response {
 
   // `hideEmpty=0` keeps them, for the rare case of wanting the full set while
   // still ordering by a sparse column. Defaults on, since examining a column is
-  // the reason to sort by it.
-  const sortColumn = primarySortColumn(url);
-  const hideEmpty = sortColumn !== null && url.searchParams.get("hideEmpty") !== "0";
+  // the reason to sort by it. The facets use the same decision, so the kind
+  // counts always describe the rows actually on offer.
+  const sortColumn = emptyFilterColumn(url);
 
   // Assembled by filters() rather than concatenated here, so the clause list and
   // the WHERE keyword have one owner and an unfiltered query cannot produce a
   // dangling "AND".
-  const scoped = hideEmpty
+  const scoped = sortColumn !== null
     ? filters(url, undefined, sortColumn)
     : { sql: where, params };
 
-  const [{ n: total }] = hideEmpty
+  const [{ n: total }] = sortColumn !== null
     ? query<{ n: number }>(`SELECT count(*) AS n FROM events ${scoped.sql}`, scoped.params)
     : [{ n: matched }];
 
@@ -239,7 +250,7 @@ function handleEvents(url: URL): Response {
     // Named so the UI can say what it dropped rather than leaving a smaller
     // total looking like lost rows.
     hiddenEmpty: matched - total,
-    emptyColumn: hideEmpty ? sortColumn : null,
+    emptyColumn: sortColumn,
     gaps,
     rows,
   });
@@ -329,11 +340,61 @@ function primarySortColumn(url: URL): string | null {
   return first === undefined ? null : first.column;
 }
 
+/**
+ * The column whose empty rows are being dropped, or null when none are.
+ *
+ * Shared by the rows and the facets so the two cannot disagree about how many
+ * of something there is — they did, and the dropdown was the one that lied.
+ * `hideEmpty=0` opts out.
+ */
+function emptyFilterColumn(url: URL): string | null {
+  const column = primarySortColumn(url);
+  if (column === null || url.searchParams.get("hideEmpty") === "0") return null;
+  return column;
+}
+
+/**
+ * Largest event window the group query will summarize.
+ *
+ * Far above the 5000 the events table allows, and deliberately so: that cap
+ * exists because the browser has to render a row per event, while a group
+ * response is bounded by the number of groups instead. Summarizing the whole
+ * corpus is one scan returning a few hundred rows, so the whole-set case stays
+ * reachable rather than being cut off at one page.
+ */
+const GROUP_WINDOW_MAX = 1_000_000;
+
 function handleGroups(url: URL): Response {
   const by = url.searchParams.get("by") ?? "actor";
   if (!GROUPABLE.has(by)) return json({ error: `cannot group by "${by}"` }, 400);
 
   const { sql: where, params } = filters(url);
+
+  // What the filters match, before the window narrows it. Reported alongside the
+  // rows so the page can say what the aggregates cover — a total that silently
+  // described one page would read as the whole session.
+  const [{ n: matched }] = query<{ n: number }>(
+    `SELECT count(*) AS n FROM events ${where}`,
+    params,
+  );
+
+  // The same skip/show the events table pages with, over the same newest-first
+  // ordering, so grouping summarizes exactly the rows that table would show for
+  // the current window.
+  //
+  // `sort` is not read here even though orderClause() would accept it: when
+  // grouping, the header shows group columns, so any event sort chain is
+  // invisible state the user cannot see or change. Letting it define the window
+  // would make identical controls produce different aggregates. The canonical
+  // newest-first order is what "skip" is documented against anyway.
+  const limit = intParam(url, "limit", 500, 1, GROUP_WINDOW_MAX);
+  const rawOffset = Number(url.searchParams.get("offset") ?? "0");
+  const offset = Number.isInteger(rawOffset) && rawOffset > 0 ? rawOffset : 0;
+  const orderBy = orderClause(url);
+  // Exact, not an estimate: the window is a contiguous slice, so what it holds
+  // is whatever is left after skipping, capped by the page size.
+  const windowed = Math.max(0, Math.min(limit, matched - offset));
+
   const rows = query(
     `SELECT COALESCE(${by}, '(none)') AS key,
             count(*)                                                  AS events,
@@ -341,18 +402,40 @@ function handleGroups(url: URL): Response {
             COALESCE(sum(resisted), 0)                                  AS resisted,
             COALESCE(sum(CASE WHEN kind = 'xp'     THEN amount END), 0) AS xp,
             sum(critical)                                               AS crits,
-            COALESCE(sum(CASE WHEN critical = 1 THEN amount END), 0)    AS crit_damage
-     FROM events ${where}
+            COALESCE(sum(CASE WHEN critical = 1 THEN amount END), 0)    AS crit_damage,
+            -- Saving throws. The count alone is informative for an opponent:
+            -- a creature only rolls one once the effect has got past magic
+            -- resistance and any spell protections, so it means your spells are
+            -- reaching them. The worst roll is comparative rather than absolute:
+            -- the log never prints a target, so -1 is only "worse than 7".
+            COALESCE(sum(CASE WHEN kind = 'save' THEN 1 END), 0)         AS saves,
+            -- Only counts what is actually known: a verdict exists for party
+            -- members, whose targets the tap reads live. A null saved is not a
+            -- failure, so it must not be counted as one.
+            COALESCE(sum(CASE WHEN saved = 0 THEN 1 END), 0)              AS failed,
+            min(CASE WHEN kind = 'save' THEN roll END)                   AS worst_save
+     -- Grouped over the window rather than the whole table, so the subquery
+     -- applies the paging before anything is aggregated.
+     FROM (SELECT * FROM events ${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?)
      GROUP BY key
      ORDER BY events DESC`,
-    params,
+    [...params, limit, offset],
   );
-  return json({ by, rows });
+  return json({ by, rows, matched, windowed, limit, offset });
 }
 
 function handleFacets(url: URL): Response {
-  const bySession = filters(url, "session");
-  const byKind = filters(url, "kind");
+  // Scoped the same way the rows are, including the empty-row drop that sorting
+  // applies. Without that the dropdown offered counts the table could not
+  // deliver: sorted by `amount`, it read "attack (611)" while only 126 rows
+  // survived, because almost no attack row carries an amount.
+  //
+  // Paging is deliberately *not* applied. A facet count says what selecting
+  // that kind will give you, and selecting one resets the offset anyway — page
+  // -scoped counts would all be at most one screen and mostly zero.
+  const empty = emptyFilterColumn(url);
+  const bySession = filters(url, "session", empty);
+  const byKind = filters(url, "kind", empty);
   return json({
     // Unfiltered, so the header can show a grand total that does not shift as
     // filters change - the status line reports the filtered count.
@@ -421,7 +504,7 @@ function handleCombatants(url: URL): Response {
   const { from, to, fromId, toId } = resolveRange(url, bounds.min, bounds.max);
 
   const rows = query<EventRow>(
-    `SELECT id, kind, actor, target, detail, raw, game_ticks, clock_ms,
+    `SELECT id, kind, actor, target, detail, roll, raw, game_ticks, clock_ms,
             actor_side, target_side, summon, target_summon
        FROM events WHERE session = ? AND id BETWEEN ? AND ?
       ORDER BY id`,

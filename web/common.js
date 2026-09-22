@@ -95,6 +95,158 @@ export function nextSort(sort, key, maxKeys) {
   return next;
 }
 
+/**
+ * Remove the leading "Name: " from a line when that name is already in a column
+ * on the same row.
+ *
+ * Almost every line the engine writes is prefixed with whoever it belongs to,
+ * and the parser splits that off into `actor` — so the text column repeated it:
+ * "Jaheira: Save vs. Death : 11" next to an actor cell reading Jaheira.
+ *
+ * Conditional on the name matching, rather than stripping any prefix, because
+ * the speaker is not always the actor. On a damage line the speaker is the
+ * *victim* ("Vampire: Takes 13 slashing damage from Tyras" has actor Tyras),
+ * and for a summon the name appears in the summon column instead. Matching
+ * against every name the row displays means nothing is ever hidden that is not
+ * visible elsewhere on the same row.
+ */
+export function stripSpeaker(text, row) {
+  const m = /^([A-Za-z][A-Za-z'\- ]{0,29}):\s*(\S.*)$/.exec(text);
+  if (m === null) return text;
+  const shown = [row.actor, row.target, row.summon, row.target_summon];
+  return shown.includes(m[1]) ? m[2] : text;
+}
+
+/**
+ * Order rows in memory by a sort chain.
+ *
+ * Used for the group-by table, which is sorted here rather than in SQL. That is
+ * a deliberate split from the events table: groups come back with no LIMIT, so
+ * the client already holds every row and sorting locally is both exact and
+ * instant. It also keeps aggregate names out of SQL entirely, so group sorting
+ * adds nothing to the surface the `sql-injection` invariant has to cover.
+ *
+ * Empties sort last whatever the direction, matching the `col IS NULL, col DIR`
+ * the server emits — a sparse column should not lead with a screen of blanks.
+ * Ties fall back to the original order, so the sort is stable and the server's
+ * own "busiest first" ordering survives underneath.
+ */
+export function sortRows(rows, chain) {
+  if (chain.length === 0) return rows;
+  return rows
+    .map((row, i) => ({ row, i }))
+    .sort((a, b) => {
+      for (const { key, dir } of chain) {
+        const av = a.row[key];
+        const bv = b.row[key];
+        // Emptiness is settled ahead of the direction flip, or `desc` negates
+        // it and a sparse column opens with a screen of blanks.
+        const empty = compareEmpty(av, bv);
+        if (empty !== null) {
+          if (empty !== 0) return empty;
+          continue;
+        }
+        const cmp = compareCells(av, bv);
+        if (cmp !== 0) return dir === "desc" ? -cmp : cmp;
+      }
+      return a.i - b.i;
+    })
+    .map((d) => d.row);
+}
+
+/** Empties last; null when both are present and the values decide it. */
+function compareEmpty(a, b) {
+  const aEmpty = a === null || a === undefined || a === "";
+  const bEmpty = b === null || b === undefined || b === "";
+  if (!aEmpty && !bEmpty) return null;
+  if (aEmpty && bEmpty) return 0;
+  return aEmpty ? 1 : -1;
+}
+
+function compareCells(a, b) {
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  // `numeric` so a text column holding digits still orders 2 before 10.
+  return String(a).localeCompare(String(b), undefined, { numeric: true });
+}
+
+/**
+ * Whether a column would render nothing at all for these rows.
+ *
+ * Width is the scarcest thing on this table and the text column is what runs out
+ * of it. With no kind selected every column is on screen, and several are dead
+ * weight — `made?`, `resisted` and `spell` are blank for whole pages at a time,
+ * yet each still holds its header's width. Dropping them hands that space to the
+ * column that needs it.
+ *
+ * Tests what would actually be *drawn*, not merely whether the field is null:
+ * a flag column shows only its true case, a verdict column only a known one, and
+ * `actor` blanks itself on a summon row. A column whose every cell comes out
+ * blank is costing width for nothing however much data is behind it.
+ *
+ * @param column the column definition
+ * @param rows the rows about to be drawn
+ * @param chain the active sort chain, since sorting un-blanks a column
+ */
+export function columnIsEmpty(column, rows, chain) {
+  const sorted = chain.some((s) => s.key === column.key);
+  return rows.every((row) => {
+    const value = row[column.key];
+    // Only the true case is ever drawn, so a column of zeroes is blank.
+    if (column.flag) return !value;
+    if (column.verdict) return value === null || value === undefined;
+    if (cellHidden(column, row, sorted)) return true;
+    return value === null || value === undefined || value === "";
+  });
+}
+
+/**
+ * Describe what a set of group aggregates actually covers.
+ *
+ * Group-by summarizes the same skip/show window the events table pages with, so
+ * the numbers describe a slice rather than the session. That has to be said on
+ * screen: a damage total from 500 events looks exactly like a damage total from
+ * 70,000, and the earlier complaint about kind totals ignoring skip/show was the
+ * same confusion in the other direction.
+ *
+ * Pure and tested for the reason the other helpers here are: this is wording
+ * that has to stay true across four cases, and it was getting written inline.
+ *
+ * @param data the `/api/groups` response: `{matched, windowed, offset}`
+ */
+export function groupScope(data) {
+  const { matched, windowed, offset } = data;
+  const total = matched.toLocaleString();
+  if (matched === 0) return "no matching events";
+  if (windowed === 0) return `nothing in this window, of ${total} matched`;
+  // The whole matched set, so there is no window worth describing.
+  if (offset === 0 && windowed >= matched) return `all ${total} matched events`;
+  const from = (offset + 1).toLocaleString();
+  const to = (offset + windowed).toLocaleString();
+  return `events ${from}–${to} of ${total} matched`;
+}
+
+/**
+ * Whether a cell should be blanked, given that its column may be sorted.
+ *
+ * `actor` and `target` blank themselves when the creature is a summon, because
+ * its name is shown in the neighbouring summon column instead — the name lives
+ * in exactly one of the two, which keeps the actor column readable as "party
+ * and opposition".
+ *
+ * But 2,528 rows carry the same name in both `target` and `target_summon`, so
+ * sorting by `target` ordered on a value those cells refused to display: a run
+ * of blanks in the middle of an otherwise alphabetical column, looking for all
+ * the world like the sort had broken. A column being sorted on has to show what
+ * it sorted by, so the blanking yields while it is in the sort chain.
+ *
+ * @param column the column definition
+ * @param row the row being rendered
+ * @param isSorted whether this column is part of the active sort chain
+ */
+export function cellHidden(column, row, isSorted) {
+  return Boolean(column.hideWhen) && column.hideWhen(row) && !isSorted;
+}
+
 /** Fill a <select> from facet rows, preserving the current choice. */
 export function fillSelect(id, rows, allLabel) {
   const select = $(id);

@@ -61,6 +61,12 @@
     color: var(--text); border-bottom-color: var(--accent); font-weight: 600;
   }
   .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* Controls that only make sense together. The row wraps, and without this the
+     paging arrows ended up on a second line away from the numbers they step. */
+  .group {
+    display: inline-flex; gap: .5rem; align-items: center;
+    flex-wrap: nowrap; white-space: nowrap;
+  }
   .spacer { flex: 1; }
   .status { color: var(--muted); font-size: .82rem; }
   /* A warning about the captured data, not about the page. Cursor is a hint
@@ -71,21 +77,56 @@
     border: 1px solid var(--border); border-radius: 8px;
   }
   table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+  /* Horizontal padding is deliberately tight. With a dozen columns on screen it
+     is paid twelve times over, and it was coming out of the one column that had
+     nothing left - 3px a side is ~40px back for the text. */
   th, td {
-    text-align: left; padding: .4rem .6rem;
+    text-align: left; padding: .4rem .45rem;
     border-bottom: 1px solid var(--border); white-space: nowrap;
   }
   th { position: sticky; top: 0; background: var(--panel); font-weight: 600; }
   th[data-sort] { cursor: pointer; user-select: none; }
   th[data-sort]:hover { color: var(--accent); }
   tbody tr:nth-child(even) { background: var(--row); }
-  td.raw { white-space: normal; min-width: 24rem; }
+  /* One line, ending in an ellipsis rather than a hard cut at the scroll edge.
+     Full text, a single line and no truncation cannot all hold for a column of
+     arbitrary game text, so the truncation is made explicit and the whole line
+     stays on hover: the title attribute carries it verbatim, which is what keeps
+     this column an audit trail even when it is shortened.
+
+     `width: 100%` with `max-width: 0` is the pair that does it in an auto-layout
+     table. The zero max-width keeps the text out of the column's intrinsic
+     width, so a long line can no longer force the table wider than its
+     container; the 100% then makes the column greedy, absorbing whatever the
+     other columns leave. That tracks the space actually available, which neither
+     a fixed width nor a `vw` fraction can - the visible columns change with the
+     kind filter and the battle toggle, so the room left over changes with them.
+     min-width is the floor, so it still reads as a text column on a narrow
+     screen, where the other columns are what force the scrolling. */
+  td.raw {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    width: 100%; max-width: 0; min-width: 20rem;
+    cursor: help;
+  }
+  /* Name columns, capped so a single long value cannot take the width the text
+     column needs. There are four of these on screen at once, which is why the
+     cap is 9rem rather than generous: measured against the real corpus the
+     longest name in a page runs to about 8.5rem, so this trims the outliers
+     without ellipsizing ordinary creature names. The whole value stays in the
+     cell's title either way. */
+  td.wide, th.wide { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  /* Headings follow their cells. Without this a numeric column labels itself at
+     the left edge while every value sits at the right. */
+  th.num { text-align: right; }
   .kind {
     display: inline-block; padding: 0 .4rem; border-radius: 4px;
     background: var(--row); border: 1px solid var(--border); font-size: .78rem;
   }
   .flag { color: var(--accent); font-weight: 600; }
+  /* A save that was made. Muted, because the scannable case is the failure and
+     a column of highlighted "made" would bury it. */
+  td.made { color: var(--muted); }
   .empty { padding: 2rem; text-align: center; color: var(--muted); }
 
   /* Combatants view */
@@ -106,7 +147,7 @@
   .obs li { display: flex; gap: .4rem; align-items: baseline; padding: .12rem 0; font-size: .82rem; }
   .obs .age { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; white-space: nowrap; }
   .obs .stale { opacity: .55; }
-  /* Category is the one thing worth colour: it says whether this helps or hurts. */
+  /* Category is the one thing worth color: it says whether this helps or hurts. */
   .tag {
     font-size: .68rem; text-transform: uppercase; letter-spacing: .04em;
     border: 1px solid var(--border); border-radius: 3px; padding: 0 .25rem;
@@ -119,6 +160,12 @@
      helping this creature, but the files cannot say whether defensively.
      Dashed to read as less certain than the three above. */
   .tag.warded     { color: #7d6ba8; border-color: #7d6ba888; border-style: dashed; }
+  /* Not a tag: a save is an event, not state, so it gets a plain marker rather
+     than a colored category box that would imply a condition. */
+  .save {
+    font-size: .68rem; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); white-space: nowrap; padding: 0 .25rem;
+  }
   @media (prefers-color-scheme: dark) {
     .tag.protection { color: #ff8a7a; border-color: #ff8a7a66; }
     .tag.disable    { color: #7fd6a2; border-color: #7fd6a266; }
@@ -126,5 +173,11 @@
     .tag.warded     { color: #b3a3d9; border-color: #b3a3d966; }
   }
   .counter { font-size: .76rem; color: var(--muted); margin: .35rem 0 0; font-style: italic; }
+  /* An ambiguity in the data, not advice — so it reads as a caveat rather than
+     as another hint, with a rule separating it from the observations. */
+  .shared {
+    font-size: .74rem; color: var(--accent); margin: .45rem 0 0;
+    border-top: 1px dashed var(--border); padding-top: .35rem;
+  }
   .note { font-size: .78rem; color: var(--muted); margin: 0 0 .8rem; }
   .casting { font-size: .8rem; color: var(--accent); margin: .3rem 0 0; }

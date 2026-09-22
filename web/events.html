@@ -29,24 +29,29 @@
     <option value="target_summon">target summon</option>
     <option value="actor_side">actor side</option>
     <option value="target_side">target side</option>
+    <option value="saved">save made</option>
     <option value="screen">screen</option>
     <option value="session">session</option>
   </select></label>
   <input type="search" id="q" placeholder="search text, actor, target">
-  <!-- Rows back from the newest, matching the combatants view's idiom. Events
-       sort newest-first by default, so the offset already reads as "how far
-       back" without needing the id arithmetic that view does. Literal values so
-       the inputs are never blank before the first fetch resolves. -->
-  <label>from <input type="number" id="offset" value="0" min="0" step="100"></label>
-  <label>show <input type="number" id="limit" value="500" min="1" max="5000" step="100"></label>
-  <span class="hint" id="bounds">back</span>
-  <button id="newer" title="towards the most recent">&lsaquo;</button>
-  <button id="older" title="further back">&rsaquo;</button>
-  <button id="latest" title="back to the most recent events">latest</button>
+  <!-- Paging. Kept in one group so the numbers and the arrows that move them
+       never wrap onto separate lines.
+       "skip" rather than "from": events sort newest-first, so "from 0" reads as
+       though it meant event 0 - the oldest - when it means the newest. How many
+       rows to skip has only one reading. -->
+  <span class="group">
+    <label>skip <input type="number" id="offset" value="0" min="0" step="100"></label>
+    <label>show <input type="number" id="limit" value="500" min="1" max="5000" step="100"></label>
+    <button id="newer" title="towards the most recent">&lsaquo;</button>
+    <button id="older" title="further back">&rsaquo;</button>
+    <button id="latest" title="jump to the most recent events">latest</button>
+  </span>
   <div class="spacer"></div>
   <label><input type="checkbox" id="battle" checked> battle only</label>
   <label><input type="checkbox" id="auto"> auto-refresh</label>
-  <button id="clearsort" disabled>clear sort</button>
+  <!-- Hidden rather than disabled while there is no sort to clear: a permanently
+       greyed-out button is just noise in a row this busy. -->
+  <button id="clearsort" hidden>clear sort</button>
   <button id="refresh">refresh</button>
 </div>
 
@@ -60,11 +65,36 @@
      syntax error in a classic script and silently prevents the whole block from
      parsing, leaving the page rendered but completely inert. -->
 <script type="module">
-import { $, esc, fillSelect, initShell, nextSort, setStatus } from "/common.js";
+import {
+  $,
+  cellHidden,
+  columnIsEmpty,
+  esc,
+  fillSelect,
+  initShell,
+  groupScope,
+  nextSort,
+  setStatus,
+  sortRows,
+  stripSpeaker,
+} from "/common.js";
 
 /** Sort keys, most significant first. Click a header to add, cycle, then drop it. */
-const state = { sort: [], offset: 0, limit: 500 };
+// Two independent chains: the event columns and the group aggregates share no
+// keys, so one table's sort says nothing about the other's.
+const state = { sort: [], groupSort: [], offset: 0, limit: 500 };
 const MAX_SORT_KEYS = 4;
+/**
+ * How many events each view will take at once.
+ *
+ * The table's cap is a rendering limit — a row per event, so 5000 is already a
+ * slow page. Grouping has no such cost, because the response is a row per group
+ * however wide the window, so the whole corpus stays groupable in one go. Both
+ * are enforced server-side as well; these keep the input from offering more than
+ * the current view can use.
+ */
+const MAX_ROWS = 5000;
+const MAX_GROUP_WINDOW = 1_000_000;
 
 const EVENT_COLUMNS = [
   { key: "id",         label: "#",      num: true },
@@ -72,20 +102,36 @@ const EVENT_COLUMNS = [
   { key: "game_ticks", label: "ticks",  num: true, verbose: true },
   { key: "kind",       label: "kind" },
   { key: "actor_side", label: "side" },
+  // `wide` marks a column holding a name. Capped with an ellipsis in CSS, so one
+  // unusually long value cannot take width the text column needs; most creature
+  // names fit well inside the cap, and the full value stays on hover.
+  //
   // Summoned creatures get their own column, so the actor column stays the party
   // roster and the opposition. The name lives in exactly one of the two.
-  { key: "actor",      label: "actor",  hideWhen: (r) => r.summon !== null },
-  { key: "summon",     label: "summon" },
-  { key: "target",     label: "target", hideWhen: (r) => r.target_summon !== null,
+  { key: "actor",      label: "actor",  wide: true,
+    hideWhen: (r) => r.summon !== null },
+  { key: "summon",     label: "summon", wide: true },
+  { key: "target",     label: "target", wide: true,
+    hideWhen: (r) => r.target_summon !== null,
     kinds: ["attack", "damage", "effect", "spell"] },
-  { key: "target_summon", label: "tgt summon", kinds: ["attack", "damage", "effect", "spell"] },
-  { key: "detail",     label: "detail" },
+  { key: "target_summon", label: "tgt summon", wide: true,
+    kinds: ["attack", "damage", "effect", "spell"] },
+  { key: "detail",     label: "detail", wide: true },
   { key: "amount",     label: "amount", num: true,
-    kinds: ["damage", "save", "xp", "gold", "loot", "level"] },
-  { key: "roll",       label: "roll",   num: true, kinds: ["attack", "tohit", "damageroll"] },
+    kinds: ["damage", "xp", "gold", "loot", "level"] },
+  // Saves belong here rather than under amount: a saving throw is a die result,
+  // which is what this column is for, and it puts a save row alongside an attack
+  // row instead of alongside damage.
+  { key: "roll",       label: "roll",   num: true,
+    kinds: ["attack", "tohit", "damageroll", "save"] },
+  // Tri-state, so not a plain flag: made, failed, or unknown. Unknown is the
+  // common case and has to stay visibly blank rather than reading as "made" —
+  // it means the tap never reported a target for that creature, which is true
+  // of every enemy.
+  { key: "saved",      label: "made?", verdict: true, kinds: ["save"] },
   { key: "resisted",   label: "resisted", num: true, kinds: ["damage"] },
   { key: "critical",   label: "crit",   flag: true, kinds: ["damage"] },
-  { key: "spell",      label: "spell",  kinds: ["damage"] },
+  { key: "spell",      label: "spell",  wide: true, kinds: ["damage"] },
   { key: "raw",        label: "text",   raw: true },
 ];
 
@@ -97,6 +143,19 @@ const GROUP_COLUMNS = [
   { key: "xp",     label: "xp",     num: true },
   { key: "crits",  label: "crits",  num: true },
   { key: "crit_damage", label: "crit dmg", num: true },
+  // Saves *made*, not saves attempted: the engine prints a save line only when
+  // the save succeeds, so a failure never reaches this table at all. It shows up
+  // as the effect landing instead. See the saving-throw section of FINDINGS.md.
+  //
+  // The lowest roll is therefore the closest call rather than a failure, and it
+  // is comparative rather than absolute: the log never prints a target, so -1 is
+  // only "closer than 7".
+  //
+  // `failed` is deliberately absent. The server still computes it, but a save row
+  // is a success by construction, so it could only ever be zero - and a zero
+  // under that heading reads as "nobody ever failed", the opposite of the truth.
+  { key: "saves",  label: "saves made", num: true },
+  { key: "worst_save", label: "closest call", num: true },
 ];
 
 /**
@@ -124,73 +183,119 @@ function params() {
 }
 
 /**
- * Columns worth showing right now. Two independent narrowings:
+ * Columns that always earn their width, whatever the rows hold.
+ *
+ * `raw` is the column the others are being trimmed for. `id` and `kind` are how
+ * a row is identified and cross-referenced, so they stay even on a page where
+ * something has gone strange enough to leave them blank.
+ */
+const ALWAYS_SHOWN = new Set(["id", "kind", "raw"]);
+
+/**
+ * Columns worth showing right now. Three independent narrowings:
  *  - "battle only" drops the timing columns, which are for correlating against
  *    the raw log rather than reading a fight
  *  - selecting a single kind drops columns that kind never populates. The `kinds`
  *    lists come from what the data actually sets, not from guesswork.
+ *  - a column with nothing to draw on this page is dropped. With no kind
+ *    selected every column is on screen and several are blank throughout, each
+ *    still holding its header's width while the text column ran out of room.
+ *
+ * The last one reads the loaded rows, so it describes exactly what is on screen.
+ * That does mean a column can come and go as you page, which is the trade: the
+ * alternative is paying for it on every page where it has nothing to say.
  */
-function visibleColumns() {
+function visibleColumns(rows) {
   const kind = $("kind").value;
   const battle = $("battle").checked;
   return EVENT_COLUMNS.filter((c) =>
-    !(c.verbose && battle) && !(kind && c.kinds && !c.kinds.includes(kind))
+    !(c.verbose && battle) &&
+    !(kind && c.kinds && !c.kinds.includes(kind)) &&
+    (ALWAYS_SHOWN.has(c.key) || !columnIsEmpty(c, rows, state.sort))
   );
 }
 
-const sortIndex = (key) => state.sort.findIndex((s) => s.key === key);
-
-function renderHead(columns, sortable) {
+/**
+ * Draw the header row.
+ *
+ * Takes the chain rather than reading one global, because the two tables sort
+ * independently: the event columns and the group aggregates share no keys, so a
+ * chain from one is meaningless to the other.
+ *
+ * @param chain sort chain to reflect, or null for a table that does not sort
+ * @param onSort called with the clicked column key
+ */
+function renderHead(columns, chain, onSort) {
+  const sortable = chain !== null;
   $("head").innerHTML = "<tr>" + columns.map((c) => {
     let mark = "";
     if (sortable) {
-      const i = sortIndex(c.key);
+      const i = chain.findIndex((s) => s.key === c.key);
       if (i !== -1) {
-        const arrow = state.sort[i].dir === "asc" ? "↑" : "↓";
+        const arrow = chain[i].dir === "asc" ? "↑" : "↓";
         // Rank only matters once there is a chain; a lone "1" is just noise.
-        mark = ` <span class="sortmark">${arrow}${state.sort.length > 1 ? i + 1 : ""}</span>`;
+        mark = ` <span class="sortmark">${arrow}${chain.length > 1 ? i + 1 : ""}</span>`;
       }
     }
     const attr = sortable ? ` data-sort="${c.key}"` : "";
-    return `<th${attr}>${c.label}${mark}</th>`;
+    // A numeric column right-aligns its cells, so its heading has to match or
+    // the label sits at the opposite end of the column from every value under
+    // it. Barely noticeable in the events table, where the columns are narrow;
+    // obvious in group-by, where "worst save" ends up a column's width away
+    // from the number it names.
+    const cls = c.num ? ' class="num"' : c.wide ? ' class="wide"' : "";
+    return `<th${attr}${cls}>${c.label}${mark}</th>`;
   }).join("") + "</tr>";
 
-  $("clearsort").disabled = state.sort.length === 0;
+  $("clearsort").hidden = !sortable || chain.length === 0;
   if (!sortable) return;
 
   // The chain transition lives in common.js as a pure function, so it can be
   // tested. See nextSort() there for why a click promotes rather than appends.
   for (const th of $("head").querySelectorAll("th[data-sort]")) {
-    th.onclick = () => {
-      state.sort = nextSort(state.sort, th.dataset.sort, MAX_SORT_KEYS);
-      resetPaging();
-      load();
-    };
+    th.onclick = () => onSort(th.dataset.sort);
   }
 }
 
-function cell(column, row) {
+/** @param chain the active sort chain for the table being drawn */
+function cell(column, row, chain) {
   const value = row[column.key];
   // Boolean columns show only the true case; a column full of "no" is noise.
   // Checked before the empty test, since 0 is a real value that must stay blank.
   if (column.flag) return value ? '<td class="flag">yes</td>' : "<td></td>";
-  if (column.hideWhen && column.hideWhen(row)) return "<td></td>";
+  // A saving throw's outcome. Blank when unknown, which is not the same as
+  // failed: the log never prints a verdict, so this is only filled in for party
+  // members, whose targets the tap reads live from the engine.
+  if (column.verdict) {
+    if (value === null || value === undefined) return "<td></td>";
+    return value ? '<td class="made">made</td>' : '<td class="flag">FAILED</td>';
+  }
+  // Yields while this column is sorted: see cellHidden() for why.
+  if (cellHidden(column, row, chain.some((s) => s.key === column.key))) return "<td></td>";
   if (value === null || value === undefined || value === "") return "<td></td>";
   const text = esc(value);
   if (column.key === "kind") return `<td><span class="kind">${text}</span></td>`;
   if (column.num) return `<td class="num">${text}</td>`;
-  if (column.raw) return `<td class="raw">${text}</td>`;
+  if (column.raw) {
+    // Drop the speaker prefix, but keep the untouched line on hover: this
+    // column is the audit trail, so the verbatim text has to stay reachable.
+    const shown = stripSpeaker(value, row);
+    return `<td class="raw" title="${esc(value)}">${esc(shown)}</td>`;
+  }
+  // Capped in CSS, so the full value rides along in the title for hover.
+  if (column.wide) return `<td class="wide" title="${text}">${text}</td>`;
   return `<td>${text}</td>`;
 }
 
-function renderRows(columns, rows) {
+
+function renderRows(columns, rows, chain) {
   if (rows.length === 0) {
     $("body").innerHTML =
       `<tr><td class="empty" colspan="${columns.length}">no matching events</td></tr>`;
     return;
   }
   $("body").innerHTML = rows
-    .map((row) => "<tr>" + columns.map((c) => cell(c, row)).join("") + "</tr>")
+    .map((row) => "<tr>" + columns.map((c) => cell(c, row, chain)).join("") + "</tr>")
     .join("");
 }
 
@@ -207,10 +312,36 @@ async function load() {
 
   if (groupBy) {
     p.set("by", groupBy);
+    // The aggregates cover the same window the events table pages with, so the
+    // paging controls have to reach the group query too.
+    p.set("limit", state.limit);
+    p.set("offset", state.offset);
     const data = await (await fetch("/api/groups?" + p)).json();
-    renderHead(GROUP_COLUMNS, false);
-    renderRows(GROUP_COLUMNS, data.rows);
-    setStatus(`${data.rows.length} groups by ${groupBy}`);
+    renderHead(GROUP_COLUMNS, state.groupSort, (key) => {
+      state.groupSort = nextSort(state.groupSort, key, MAX_SORT_KEYS);
+      load();
+    });
+    // Sorted here rather than in SQL: the group response is the complete set of
+    // groups for the window, with no limit of its own, so ordering it locally is
+    // exact. Falls back to the server's busiest-first order when no column is
+    // chosen.
+    renderRows(GROUP_COLUMNS, sortRows(data.rows, state.groupSort), state.groupSort);
+
+    // Same paging wiring the table gets: the window is what the aggregates are
+    // now scoped to, so the controls that move it have to stay live and honest
+    // about where its edges are.
+    if (!rangeTouched) {
+      $("offset").value = data.offset;
+      $("limit").value = data.limit;
+    }
+    // A window wider than the table can render is allowed here, because the
+    // response is bounded by the number of groups rather than by the window.
+    $("limit").max = Math.max(data.matched, MAX_ROWS);
+    $("offset").max = Math.max(0, data.matched - 1);
+    $("newer").disabled = data.offset === 0;
+    $("older").disabled = data.offset + data.windowed >= data.matched;
+
+    setStatus(`${data.rows.length} groups by ${groupBy} — ${groupScope(data)}`);
     return;
   }
 
@@ -220,9 +351,13 @@ async function load() {
   p.set("limit", state.limit);
   p.set("offset", state.offset);
   const data = await (await fetch("/api/events?" + p)).json();
-  const columns = visibleColumns();
-  renderHead(columns, true);
-  renderRows(columns, data.rows);
+  const columns = visibleColumns(data.rows);
+  renderHead(columns, state.sort, (key) => {
+    state.sort = nextSort(state.sort, key, MAX_SORT_KEYS);
+    resetPaging();
+    load();
+  });
+  renderRows(columns, data.rows, state.sort);
 
   // Reflect what the server actually used, including its clamping, so the
   // inputs never disagree with the rows on screen. Skipped mid-edit.
@@ -230,8 +365,13 @@ async function load() {
     $("offset").value = data.offset;
     $("limit").value = data.limit;
   }
+  // The total is bound to the input rather than printed beside it: the status
+  // line below already says "1-500 of 1338", and a second copy up here read as
+  // "back of 1338" with nothing to say what it counted.
   $("offset").max = Math.max(0, data.total - 1);
-  $("bounds").textContent = `back of ${data.total}`;
+  // Back down from whatever grouping raised it to, or the table would offer to
+  // render a window only the group query can afford.
+  $("limit").max = MAX_ROWS;
   $("newer").disabled = data.offset === 0;
   $("older").disabled = data.offset + data.rows.length >= data.total;
 
@@ -249,9 +389,15 @@ async function load() {
   // pending — so this is the only honest signal that a stretch is incomplete.
   const gaps = $("gaps");
   gaps.hidden = data.gaps === 0;
+  // The server scopes the count to the selected session, or the whole corpus
+  // when none is chosen, so the wording has to follow.
+  const scope = $("session").value ? "in this session" : "across all sessions";
   gaps.textContent = data.gaps === 1
-    ? "1 capture gap in this session"
-    : `${data.gaps} capture gaps in this session`;
+    // "in this session" was a lie with no session selected: the count is
+    // corpus-wide then, and reading 119 gaps as belonging to one session badly
+    // overstates how damaged that session is.
+    ? `1 capture gap ${scope}`
+    : `${data.gaps} capture gaps ${scope}`;
   gaps.title = "The engine replaced its message table at these points and rows " +
     "pending capture were lost. Select kind=resync to see where.";
 }
@@ -271,7 +417,10 @@ for (const id of ["offset", "limit"]) {
     clearTimeout(rangeDebounce);
     rangeDebounce = setTimeout(async () => {
       state.offset = Math.max(0, Number($("offset").value) || 0);
-      state.limit = Math.min(Math.max(Number($("limit").value) || 500, 1), 5000);
+      // Grouping allows a far wider window than the table can render, so the
+      // ceiling follows the active view rather than being fixed at the row cap.
+      const ceiling = $("groupby").value ? MAX_GROUP_WINDOW : MAX_ROWS;
+      state.limit = Math.min(Math.max(Number($("limit").value) || 500, 1), ceiling);
       await load();
       rangeTouched = false;
     }, 400);
@@ -342,6 +491,11 @@ $("battle").onchange = () => {
 };
 
 $("clearsort").onclick = () => {
+  if ($("groupby").value) {
+    state.groupSort = [];
+    load();
+    return;
+  }
   state.sort = [];
   resetPaging();
   load();

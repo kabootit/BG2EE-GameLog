@@ -293,7 +293,7 @@ Deno.test("free-text search covers the side columns", async () => {
 });
 
 Deno.test("search still matches the raw text and the derived columns", async () => {
-  // Widening must not have cost the original behaviour.
+  // Widening must not have cost the original behavior.
   assertEquals((await get(`api/events?session=${SIDED}&q=piercing`)).total, 2);
   assertEquals((await get(`api/events?session=${SIDED}&q=Jaheira`)).total, 3);
   assertEquals((await get(`api/events?session=${SIDED}&q=journal`)).total, 1);
@@ -450,4 +450,80 @@ Deno.test("capture-gap markers are counted, not left among the events", async ()
 Deno.test("a session with no gaps reports none", async () => {
   const d = await get(`api/events?session=${SIDED}`);
   assertEquals(d.gaps, 0);
+});
+
+Deno.test("kind counts describe the rows actually on offer", async () => {
+  // A facet count has to match what selecting that kind would give you. The
+  // empty-row drop that sorting applies used to be missing here, so sorted by a
+  // sparse column the dropdown advertised the unsorted totals while the table
+  // showed a fraction of them.
+  const sum = (d: { kinds: Array<{ n: number }> }) => d.kinds.reduce((s, k) => s + k.n, 0);
+
+  const plain = await get(`api/events?session=${SIDED}`);
+  assertEquals(sum(await get(`api/facets?session=${SIDED}`)), plain.total);
+
+  // `roll` is only on save and attack rows, so sorting by it drops the rest.
+  const sorted = await get(`api/events?session=${SIDED}&sort=roll:desc`);
+  assertEquals(sorted.total < plain.total, true, "the drop actually bites");
+  assertEquals(sum(await get(`api/facets?session=${SIDED}&sort=roll:desc`)), sorted.total);
+});
+
+Deno.test("paging deliberately does not change the kind counts", async () => {
+  // The opposite property, and it is not an oversight: a count says what
+  // selecting a kind will give you, and selecting one resets the offset. Counts
+  // scoped to the visible page would be at most one screen and mostly zero.
+  const sum = (d: { kinds: Array<{ n: number }> }) => d.kinds.reduce((s, k) => s + k.n, 0);
+  const all = sum(await get(`api/facets?session=${SIDED}`));
+  assertEquals(sum(await get(`api/facets?session=${SIDED}&limit=1&offset=2`)), all);
+});
+
+Deno.test("no column to filter on leaves the row set untouched", async () => {
+  // Regression guard for a null reaching filters() as if it were a column name:
+  // it emitted "null IS NOT NULL", which is never true, and silently zeroed
+  // every facet count while the rows themselves still looked right.
+  const d = await get(`api/facets?session=${SIDED}`);
+  assertEquals(d.kinds.length > 0, true);
+  assertEquals(d.sessions.length > 0, true);
+});
+
+Deno.test("group aggregates are scoped to the paging window", async () => {
+  // The whole session first, as the baseline: Jaheira's two hits on the wyvern
+  // sum to 16.
+  const all = await get(`api/groups?by=actor&session=${SIDED}`);
+  const of = (d: { rows: Array<{ key: string; events: number; damage: number }> }, key: string) =>
+    d.rows.find((r) => r.key === key);
+  assertEquals(of(all, "Jaheira")?.damage, 16);
+  assertEquals(all.matched, 4);
+  assertEquals(all.windowed, 4);
+
+  // Rows are newest-first, so the first page holds the journal line and the
+  // wyvern's hit back — and Jaheira's damage must drop out of the totals
+  // entirely rather than surviving as a session-wide sum.
+  const first = await get(`api/groups?by=actor&session=${SIDED}&limit=2`);
+  assertEquals(of(first, "Jaheira"), undefined, "outside the window");
+  assertEquals(of(first, "Wyvern")?.damage, 4);
+  assertEquals(first.windowed, 2);
+
+  // Paging back reaches her two rows, and only those.
+  const second = await get(`api/groups?by=actor&session=${SIDED}&limit=2&offset=2`);
+  assertEquals(of(second, "Jaheira")?.damage, 16);
+  assertEquals(of(second, "Jaheira")?.events, 2);
+  assertEquals(of(second, "Wyvern"), undefined);
+  assertEquals(second.offset, 2);
+});
+
+Deno.test("a group window may be wider than the table's row cap", async () => {
+  // The events table stops at 5000 because it renders a row per event. Grouping
+  // returns a row per group however wide the window, so the whole-corpus case
+  // has to stay reachable instead of being clamped to one page.
+  const d = await get(`api/groups?by=actor&session=${SIDED}&limit=20000`);
+  assertEquals(d.limit, 20000);
+  assertEquals(d.windowed, d.matched, "covers everything matched");
+});
+
+Deno.test("paging past the end groups nothing and says so", async () => {
+  const d = await get(`api/groups?by=actor&session=${SIDED}&offset=99`);
+  assertEquals(d.rows.length, 0);
+  assertEquals(d.windowed, 0);
+  assertEquals(d.matched, 4, "still reports what the filters matched");
 });
