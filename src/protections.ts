@@ -34,7 +34,7 @@ export type Category =
    * far better than a wrong one.
    *
    * Hand-written entries keep `protection` or `buff`, so this never displaces a
-   * judgement that has already been made.
+   * judgment that has already been made.
    */
   | "warded";
 
@@ -474,16 +474,48 @@ export interface DerivedSpell {
   name: string;
   /** The landed-effect message, when the spell prints one. */
   effect?: string;
-  category: Category;
+  /**
+   * Absent when the files gave no semantics.
+   *
+   * A row can be worth hydrating for its `summons` alone — Wyvern Call puts a
+   * creature on the field but is not itself state. Registering such a spell as
+   * an effect would make "Wyvern Call" appear as a tagged observation on the
+   * caster's card, which is why this is optional rather than defaulted.
+   */
+  category?: Category;
   dispellable: boolean;
   strips?: Strips;
+  /** Display names of creatures this spell summons, if the files name them. */
+  summons?: string[];
+}
+
+/**
+ * Spell display name -> creatures it summons, from the game files.
+ *
+ * Only spells that name a `.CRE` directly; most summoning spells point at an
+ * EFF file instead and are absent here rather than wrong.
+ */
+const SUMMONS = new Map<string, string[]>();
+
+/**
+ * What a cast of this spell puts on the field.
+ *
+ * The point of this is the case creature-side inference cannot reach. All
+ * wyverns are the string "Wyvern", so a wyvern summoned by Wyvern Call is
+ * indistinguishable from the ones attacking you, and the merged combatant
+ * resolves to `opponent` on the weight of the party attacking the hostile ones.
+ * The cast line is independent evidence that one of them was yours.
+ */
+export function summonedBy(spellName: string | null): string[] {
+  if (spellName === null) return [];
+  return SUMMONS.get(norm(spellName)) ?? [];
 }
 
 /**
  * Merge spell data read from the game files under the hand-written table.
  *
  * Call once, after `openDb()`. Deliberately *under*: a hand-written entry
- * always wins, because it carries judgements the files cannot express — the
+ * always wins, because it carries judgments the files cannot express — the
  * protection/buff distinction, and the `counter` advice that is the reason a
  * player opens the view at all.
  *
@@ -500,6 +532,14 @@ export interface DerivedSpell {
  */
 export function hydrate(rows: DerivedSpell[]): void {
   for (const row of rows) {
+    if (row.summons !== undefined && row.summons.length > 0) {
+      SUMMONS.set(norm(row.name), row.summons);
+    }
+    // A row with no category is here for its summons alone and must not become
+    // a lookup: "Wyvern Call" is a spell that puts a creature on the field, not
+    // a condition anyone is under.
+    if (row.category === undefined) continue;
+
     const effect: Effect = {
       name: row.name,
       category: row.category,

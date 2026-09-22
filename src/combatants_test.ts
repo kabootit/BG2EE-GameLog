@@ -8,6 +8,7 @@
 import { assertEquals, assertExists } from "jsr:@std/assert@1";
 import { type EventRow, foldCombatants } from "./combatants.ts";
 import { EventLinker, parseLine } from "./parse.ts";
+import { hydrate } from "./protections.ts";
 
 /**
  * Build rows the way the pipeline does — parse, link, then shape as the DB
@@ -29,6 +30,7 @@ function rows(lines: string[], sides: Record<string, string> = {}): EventRow[] {
       actor: linked.actor,
       target: linked.target,
       detail: linked.detail,
+      roll: linked.roll,
       raw: linked.raw,
       game_ticks: linked.gameTicks,
       clock_ms: linked.clockMs,
@@ -411,4 +413,95 @@ Deno.test("an empty stream folds to nothing", () => {
   const r = foldCombatants([]);
   assertEquals(r.combatants, []);
   assertEquals(r.latestId, 0);
+});
+
+Deno.test("a party summon sharing an enemy's name is flagged, not silently pooled", () => {
+  // The unresolvable case, from a real session. Neera cast Wyvern Call and the
+  // engine names every wyvern "Wyvern", so the summon cannot be told from the
+  // hostile ones. Side resolution correctly lands on `opponent` - the party
+  // attacked the enemy wyverns far more than anything attacked the summon - but
+  // the cast line proves one of them was ours, so the card has to say the rows
+  // are mixed rather than presenting them as pure enemy activity.
+  //
+  // Hydrated with the summon fact only: no category, so nothing is registered
+  // as a lookup and the rest of this file's tests are unaffected.
+  hydrate([{ name: "Wyvern Call", dispellable: false, summons: ["Wyvern"] }]);
+
+  const r = foldCombatants(rows([
+    "Neera: Casts Wyvern Call",
+    ...Array.from({ length: 9 }, () => "Wyvern: Takes 9 piercing damage from Neera"),
+    "Wyvern: Takes 5 poison damage from Wyvern",
+  ], { Neera: "party", Wyvern: "opponent" }));
+
+  const wyvern = find(r, "Wyvern")!;
+  assertEquals(wyvern.side, "opponent");
+  assertEquals(wyvern.alsoSummonedBy, "Wyvern Call", "the conflict is reported");
+});
+
+Deno.test("a summon with a unique name is not flagged as a conflict", () => {
+  // Call Woodland Beings summons a Nymph, which nothing else is called, so
+  // side resolution already places it correctly and it shows as a summon.
+  // Repeating the spell name there would be noise.
+  hydrate([{ name: "Call Woodland Beings", dispellable: false, summons: ["Nymph"] }]);
+
+  const r = foldCombatants(rows([
+    "Cernd: Casts Call Woodland Beings",
+    "Wyvern: Takes 6 slashing damage from Nymph",
+  ], { Cernd: "party", Nymph: "party", Wyvern: "opponent" }));
+
+  assertEquals(find(r, "Nymph")!.alsoSummonedBy, null);
+});
+
+Deno.test("an enemy casting a summoning spell does not claim it for the party", () => {
+  // Only the party's casts count. Otherwise a lich summoning something would
+  // mark that creature as ours.
+  hydrate([{ name: "Wyvern Call", dispellable: false, summons: ["Wyvern"] }]);
+
+  const r = foldCombatants(rows([
+    "Red Wizard: Casts Wyvern Call",
+    ...Array.from({ length: 9 }, () => "Wyvern: Takes 9 piercing damage from Neera"),
+  ], { Neera: "party", Wyvern: "opponent", "Red Wizard": "opponent" }));
+
+  assertEquals(find(r, "Wyvern")!.alsoSummonedBy, null);
+});
+
+Deno.test("saves are folded per category, not per roll", () => {
+  // A long fight produces dozens; the useful facts are how often and how low,
+  // so they collapse to one line per category rather than filling the card.
+  const r = foldCombatants(rows([
+    "Wyvern: Save vs. Spell : 15",
+    "Wyvern: Save vs. Spell : 9",
+    "Wyvern: Save vs. Spell : 16",
+    "Wyvern: Save vs. Death : 11",
+  ], { Wyvern: "opponent" }));
+
+  const wyvern = find(r, "Wyvern")!;
+  assertEquals(wyvern.saves.length, 2, "two categories, four rolls");
+
+  const spell = wyvern.saves.find((s) => s.category === "Spell")!;
+  assertEquals(spell.count, 3);
+  assertEquals(spell.roll, 16, "most recent, since rows arrive in id order");
+  assertEquals(spell.worst, 9);
+});
+
+Deno.test("an opponent's saves are kept even though the outcome is unknowable", () => {
+  // The point of showing them: a creature only rolls once the effect got past
+  // magic resistance and any spell protections, so this is the positive
+  // counterpart to the probes. Nothing claims the save was made.
+  const r = foldCombatants(rows([
+    "Wyvern: Save vs. Spell : 15",
+  ], { Wyvern: "opponent" }));
+
+  const wyvern = find(r, "Wyvern")!;
+  assertEquals(wyvern.side, "opponent");
+  assertEquals(wyvern.saves.length, 1);
+  // Not an observation: a save is an event, not a state the creature is under.
+  assertEquals(wyvern.observations.length, 0);
+});
+
+Deno.test("a save with no roll is ignored rather than recorded as zero", () => {
+  // The second save rule matches bare "Saving Throw" text with no number. A
+  // zero there would read as the worst possible roll.
+  const r = foldCombatants(rows(["Wyvern: Saving Throw"], { Wyvern: "opponent" }));
+  assertEquals(find(r, "Wyvern")?.saves.length ?? 0, 0);
 });

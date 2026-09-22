@@ -129,7 +129,7 @@ function reportProtectionCoverage(db: Db, limit: number) {
   >).map((s) => s.session);
 
   const rows = db.prepare(
-    `SELECT id, kind, actor, target, detail, raw, game_ticks, clock_ms,
+    `SELECT id, kind, actor, target, detail, roll, raw, game_ticks, clock_ms,
             actor_side, target_side, summon, target_summon
        FROM events WHERE session = ? ORDER BY id`,
   );

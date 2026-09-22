@@ -55,19 +55,96 @@ end
 -- code can run before a game exists, where an engine accessor would dereference
 -- a null game pointer and segfault the process.
 local A7LOG_roster = ""
+-- Last saving-throw text seen per character, so a line is emitted only when it
+-- actually changes rather than on every poll.
+local A7LOG_saves = {}
+
+-- What `characters` looked like last time we said so, to report a change once
+-- rather than every frame.
+local A7LOG_charState = ""
+
+-- Report what `characters` actually is, whenever that changes.
+--
+-- Diagnostic, and it earns its place: A7ROSTER has emitted **zero** lines in
+-- every session ever captured, so the roster tap has never worked and
+-- SideResolver has been silently running on its speech fallback the whole time.
+-- The cause cannot be an exception - this runs inside the drain's pcall, before
+-- the loop that emits rows, so a throw here would have stopped those too and
+-- there are 86k of them. That leaves the early return, i.e. `characters` is not
+-- a table when the tap reads it.
+--
+-- Separate marker so it cannot be mistaken for an event: parseLine only accepts
+-- A7LOG.
+local function A7LOG_probeCharacters()
+	local state
+	if type(characters) ~= "table" then
+		state = type(characters)
+	else
+		local keys, named, sample = 0, 0, {}
+		for k, v in pairs(characters) do
+			keys = keys + 1
+			if #sample < 8 then
+				sample[#sample + 1] = tostring(k) .. ":" .. type(v)
+			end
+			if type(v) == "table" and type(v.name) == "string" and v.name ~= "" then
+				named = named + 1
+			end
+		end
+		-- The keys themselves are the point: if they are not 0..9 that alone
+		-- explains why the old roster scan never found anything.
+		state = string.format(
+			"table keys=%d named=%d [%s]",
+			keys, named, table.concat(sample, " ")
+		)
+	end
+
+	if state ~= A7LOG_charState then
+		A7LOG_charState = state
+		Infinity_Log("A7PROBE\tcharacters " .. state)
+	end
+end
 
 local function A7LOG_checkRoster()
+	A7LOG_probeCharacters()
+
 	if type(characters) ~= "table" then
 		return
 	end
 
 	local names = {}
-	-- Scanned rather than indexed 1..6: party slot numbering is not guaranteed,
-	-- and a missing slot must not stop the ones after it being seen.
-	for i = 0, 9 do
-		local c = characters[i]
+	-- Enumerated with pairs() rather than scanned over 0..9.
+	--
+	-- The old loop assumed small integer keys and its own comment conceded that
+	-- "party slot numbering is not guaranteed" — and the roster has emitted
+	-- nothing in any session ever recorded, so that assumption is a prime
+	-- suspect. pairs() makes no assumption about the key space at all. The
+	-- guard below is what keeps non-character entries out, and it was already
+	-- doing that job.
+	for _, c in pairs(characters) do
 		if type(c) == "table" and type(c.name) == "string" and c.name ~= "" then
 			names[#names + 1] = c.name
+
+			-- Saving throws, which the combat log itself never gives a verdict
+			-- on. The record screen reads them from here: override/ui.menu
+			-- builds its SAVING_THROWS_LABEL row from
+			-- characters[id].proficiencies.savingThrows and concatenates it
+			-- straight into display text.
+			--
+			-- So this is already formatted and localized by the engine, not five
+			-- numbers. It ships as-is and is taken apart capture-side; tabs and
+			-- newlines are flattened first so one character stays one row.
+			--
+			-- Reading it is as safe as the roster scan: a plain Lua table, no
+			-- Infinity_* accessor, so nothing here can dereference a null game
+			-- pointer before a game exists.
+			local prof = c.proficiencies
+			if type(prof) == "table" and type(prof.savingThrows) == "string" then
+				local throws = prof.savingThrows:gsub("[\r\n]+", " | "):gsub("\t", " ")
+				if A7LOG_saves[c.name] ~= throws then
+					A7LOG_saves[c.name] = throws
+					Infinity_Log("A7STATS\t" .. c.name .. "\t" .. throws)
+				end
+			end
 		end
 	end
 

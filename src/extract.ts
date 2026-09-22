@@ -25,7 +25,7 @@
  */
 import { DB_PATH, DIALOG_TLK, GAME_DIR, OVERRIDE_DIR } from "./config.ts";
 import { makeSpellWriter, openDb } from "./db.ts";
-import { type Feature, readSpl, type Spell, Tlk } from "./iebinary.ts";
+import { type Feature, readCre, readSpl, type Spell, Tlk } from "./iebinary.ts";
 import {
   Biffs,
   Override,
@@ -39,8 +39,10 @@ import {
   classifySpell,
   crossValidate,
   deriveVotes,
-  type Labelled,
+  type Labeled,
   mergeCategory,
+  NON_SEMANTIC_OPCODES,
+  semanticOpcodes,
   stripsFromFeatures,
 } from "./opcodes.ts";
 
@@ -76,9 +78,6 @@ function classRank(resref: string): number {
 /** "Display string" — param1 is a strref, and that string is what the log prints. */
 const OP_DISPLAY_STRING = 139;
 
-/** Cosmetic opcodes present in nearly every spell, so they discriminate nothing. */
-const OP_COSMETIC = new Set([OP_DISPLAY_STRING, 215]);
-
 /**
  * Is this spell's state removable by Dispel Magic?
  *
@@ -96,25 +95,10 @@ const OP_COSMETIC = new Set([OP_DISPLAY_STRING, 215]);
  */
 function dispellableFromFile(spell: Spell, category: string): boolean | null {
   if (category === "dispel") return null;
-  const real = spell.features.filter((f) => !OP_COSMETIC.has(f.opcode) && !OP_INCIDENTAL.has(f.opcode));
+  const real = spell.features.filter((f) => !NON_SEMANTIC_OPCODES.has(f.opcode));
   if (real.length === 0) return null;
   return real.some((f) => f.dispellable);
 }
-
-/**
- * Effects that accompany a spell without being it: icon, sound, animation, and
- * the `Cast spell` chain used to apply something else. Their dispel bits
- * describe the decoration, not the protection.
- */
-const OP_INCIDENTAL = new Set([
-  142, // portrait icon
-  174, // play sound
-  146, // cast spell
-  141, // set animation / colour glow
-  177, // use EFF file
-  233, // modify proficiency / usability flag
-  328, // set spell state
-]);
 
 async function main() {
   // --- load -------------------------------------------------------------
@@ -475,7 +459,7 @@ async function main() {
   for (const m of matched.filter((x) => x.category === "dispel")) {
     console.log(`\n  ${m.label}  (${m.spell.resref})`);
     for (const f of m.spell.features) {
-      if (OP_COSMETIC.has(f.opcode)) continue;
+      if (NON_SEMANTIC_OPCODES.has(f.opcode)) continue;
       const res = f.resource === "" ? "" : `  resource=${f.resource}`;
       console.log(
         `    op ${String(f.opcode).padStart(3)}  p1=${String(f.param1).padStart(6)}` +
@@ -529,7 +513,7 @@ async function main() {
   // evidence.
   for (const d of differ) {
     const parts = d.spell.features
-      .filter((f: Feature) => !OP_COSMETIC.has(f.opcode))
+      .filter((f: Feature) => !NON_SEMANTIC_OPCODES.has(f.opcode))
       .map((f: Feature) => `${f.opcode}:${f.dispelResist}`);
     const tally = new Map<string, number>();
     for (const p of parts) tally.set(p, (tally.get(p) ?? 0) + 1);
@@ -547,16 +531,16 @@ async function main() {
   }
 
   // --- stage 3: learn the category mapping and check it generalizes -----
-  const labelled: Labelled[] = matched.map((m) => ({
+  const labeled: Labeled[] = matched.map((m) => ({
     label: m.label,
     category: m.category,
-    opcodes: m.spell.features.map((f: Feature) => f.opcode),
+    opcodes: semanticOpcodes(m.spell.features.map((f: Feature) => f.opcode)),
   }));
 
-  const votes = deriveVotes(labelled);
+  const votes = deriveVotes(labeled);
   console.log(`\n--- category mapping, learned from the labels ---`);
   console.log(`  ${votes.size} opcodes carry usable signal, of ${
-    new Set(labelled.flatMap((l) => l.opcodes)).size
+    new Set(labeled.flatMap((l) => l.opcodes)).size
   } seen`);
 
   const byVoteCategory = new Map<string, Array<[number, number]>>();
@@ -575,7 +559,7 @@ async function main() {
   // labels means those two labels are not distinguishable by that mechanic, and
   // if that happens a lot the scheme is the problem rather than the classifier.
   const opCategories = new Map<number, Set<string>>();
-  for (const l of labelled) {
+  for (const l of labeled) {
     for (const op of new Set(l.opcodes)) {
       const set = opCategories.get(op) ?? new Set<string>();
       set.add(l.category);
@@ -595,7 +579,7 @@ async function main() {
     console.log(`    ${pair.padEnd(24)} ${ops.length} opcodes: ${ops.sort((a, b) => a - b).join(",")}`);
   }
 
-  const cv = crossValidate(labelled);
+  const cv = crossValidate(labeled);
   console.log(`\n  leave-one-out: ${cv.correct} correct, ${cv.mistakes.length} wrong, ` +
     `${cv.abstained} abstained, of ${cv.tested}`);
   console.log(
@@ -610,10 +594,10 @@ async function main() {
 
   // Test the hypothesis the mistakes suggest: that protection and buff are one
   // class as far as the engine is concerned, and the split is a player-facing
-  // judgement with nothing in the files behind it. If merging them fixes the
+  // judgment with nothing in the files behind it. If merging them fixes the
   // accuracy, the scheme was at fault and not the derivation.
   const mergedCv = crossValidate(
-    labelled.map((l) => ({
+    labeled.map((l) => ({
       ...l,
       category: l.category === "buff" || l.category === "protection" ? "helps-them" : l.category,
     })),
@@ -640,8 +624,11 @@ async function main() {
   // actually support. Hand-written entries keep `protection`/`buff`; `hydrate()`
   // never displaces them.
   const mergedVotes = deriveVotes(
-    labelled.map((l) => ({ ...l, category: mergeCategory(l.category) })),
+    labeled.map((l) => ({ ...l, category: mergeCategory(l.category) })),
   );
+
+  const summons = await resolveSummons(named, tlk, override, biffs);
+  reportSummons(named, summons);
 
   const db = openDb();
   const spells = makeSpellWriter(db);
@@ -653,7 +640,7 @@ async function main() {
 
   for (const n of named) {
     const features = n.spell.features;
-    const got = classifySpell(features.map((f: Feature) => f.opcode), mergedVotes);
+    const got = classifySpell(semanticOpcodes(features.map((f: Feature) => f.opcode)), mergedVotes);
     const strips = stripsFromFeatures(features);
     // A spell that strips is a removal event, whatever the opcode vote says.
     const category = strips !== null ? "dispel" : got?.category ?? null;
@@ -685,6 +672,7 @@ async function main() {
       dispellable: category === null ? null : dispellableFromFile(n.spell, category),
       strips,
       effectText,
+      summons: summons.get(n.spell.resref) ?? [],
       source: n.source,
     });
   }
@@ -698,6 +686,95 @@ async function main() {
   console.log(`\n  wrote ${named.length} rows to the spells table in ${DB_PATH}`);
 
   reportEncoding(tlk);
+}
+
+/**
+ * Which creature, if any, each spell summons — by display name.
+ *
+ * The opcode is not the discriminator and must not be used as one. Opcode 177
+ * is "use this resource", and Dispel Magic uses it too; what makes a feature a
+ * summon is that its resource resolves to a `.CRE`. Derived that way rather
+ * than asserted, and it self-validates: "Wyvern Call" turns out to summon a
+ * creature displayed as "Wyvern", "Call Woodland Beings" one displayed as
+ * "Nymph". Both match what the session logs show appearing.
+ *
+ * **Only the direct form.** Most summoning spells point at an EFF file which in
+ * turn names the creature — Conjure Fire Elemental references `spfir1p`,
+ * Aerial Servant `spserv` — and resolving those needs an EFF reader this does
+ * not have. Those spells come back empty rather than wrong. It matters less
+ * than it sounds: their creatures have unique names, so side inference already
+ * places them correctly. The direct form is what covers the case inference
+ * cannot handle, where a summon shares a name with an enemy.
+ */
+async function resolveSummons(
+  named: Named[],
+  tlk: Tlk,
+  override: Override,
+  biffs: Biffs | null,
+): Promise<Map<string, string[]>> {
+  // resref -> display name, or null for "exists but has no name". Cached
+  // because one creature is referenced by many spells and this is file I/O.
+  const creatureNames = new Map<string, string | null>();
+
+  const creatureName = async (resref: string): Promise<string | null> => {
+    if (resref === "") return null;
+    const key = resref.toLowerCase();
+    const cached = creatureNames.get(key);
+    if (cached !== undefined) return cached;
+
+    let name: string | null = null;
+    if (override.has(resref, "cre") || (biffs !== null && biffs.has(resref, "cre"))) {
+      const res = await resolve(override, resref, "cre", biffs ?? undefined);
+      if (res !== null) {
+        try {
+          const cre = readCre(resref, res.bytes);
+          name = tlk.get(cre.nameStrref) ?? tlk.get(cre.shortNameStrref);
+        } catch {
+          name = null;
+        }
+      }
+    }
+    creatureNames.set(key, name);
+    return name;
+  };
+
+  const out = new Map<string, string[]>();
+  for (const n of named) {
+    const found: string[] = [];
+    for (const f of n.spell.features) {
+      const name = await creatureName(f.resource);
+      if (name !== null && name.trim() !== "" && !found.includes(name)) found.push(name);
+    }
+    if (found.length > 0) out.set(n.spell.resref, found);
+  }
+  return out;
+}
+
+/** Report the summon mapping, including the cases it cannot reach. */
+function reportSummons(named: Named[], summons: Map<string, string[]>) {
+  console.log(`\n--- spells that name the creature they summon ---`);
+  console.log(`  ${summons.size} of ${named.length} spells resolve a summoned creature`);
+
+  const byName = new Map<string, Named>();
+  for (const n of named) if (n.name !== null && !byName.has(n.name)) byName.set(n.name, n);
+
+  // Spells the session logs prove are summons. The ones that come back empty
+  // are the EFF-indirection cases, named so the gap is specific.
+  const KNOWN = [
+    "Wyvern Call",
+    "Call Woodland Beings",
+    "Conjure Fire Elemental",
+    "Aerial Servant",
+    "Animate Dead",
+    "Giant Insect",
+  ];
+  for (const label of KNOWN) {
+    const hit = byName.get(label);
+    const got = hit === undefined ? undefined : summons.get(hit.spell.resref);
+    console.log(
+      `  ${label.padEnd(26)} ${got === undefined ? "— (indirect, needs an EFF reader)" : got.join(", ")}`,
+    );
+  }
 }
 
 /**

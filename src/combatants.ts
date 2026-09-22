@@ -17,6 +17,7 @@ import {
   type Blocks,
   type Category,
   probeMeaning,
+  summonedBy,
   STRIPPED_BLOCKS,
   type Strips,
   stripsOf,
@@ -33,6 +34,8 @@ export interface EventRow {
   actor: string | null;
   target: string | null;
   detail: string | null;
+  /** Die results. Carries the saving-throw total on `save` rows. */
+  roll: number | null;
   raw: string;
   game_ticks: number | null;
   clock_ms: number | null;
@@ -80,6 +83,52 @@ export interface Combatant {
   lastAction: string | null;
   /** Set on death. Kept rather than dropped so the caller can choose. */
   diedAtId: number | null;
+  /**
+   * A spell the party cast that summons a creature of this name, when this
+   * creature resolved as an opponent anyway.
+   *
+   * The unresolvable case, stated rather than papered over. Every wyvern is the
+   * string "Wyvern", so one summoned by Wyvern Call cannot be told from the
+   * ones attacking you, and the merged combatant lands on `opponent` because
+   * that is where the weight of evidence points. Nothing in the log separates
+   * the rows — but the cast line proves one of them was yours, so the figures
+   * on this card pool both and say so.
+   *
+   * Null when there is no such conflict, which is the normal case: summons with
+   * unique names resolve to the party side and appear as summons already.
+   */
+  alsoSummonedBy: string | null;
+  /**
+   * Saving throws this creature rolled, one entry per category, newest first.
+   *
+   * Not an observation, and deliberately kept apart from them: a save is
+   * something that happened *to* a creature, not a state it is in, so it has no
+   * category tag and nothing here claims it succeeded. The game never prints
+   * that, and for anyone outside the party there is no reliable way to work it
+   * out — creature names map to several different stat blocks.
+   *
+   * Worth showing anyway, because a save is the positive counterpart to the
+   * `Magic Resistance` and `Spell Ineffective` probes already tracked. Those
+   * mean a spell was stopped; a save means it got through and the creature had
+   * to roll. That is directly useful while a fight is running.
+   */
+  saves: SaveRecord[];
+}
+
+/** One creature's record against a single save category. */
+export interface SaveRecord {
+  /** "Spell", "Death", "Breath Weapon", "Wand", "Polymorph". */
+  category: string;
+  count: number;
+  /** The most recent roll, and when it happened. */
+  roll: number;
+  id: number;
+  clockMs: number | null;
+  /**
+   * Lowest roll seen. Comparative only — the log never prints a target, so a
+   * worst of -1 means "worse than 7", not "failed".
+   */
+  worst: number;
 }
 
 export interface FoldResult {
@@ -95,6 +144,8 @@ const STRENGTH: Record<Source, number> = { cast: 0, effect: 1, probe: 2 };
 interface Mutable extends Combatant {
   /** Keyed by canonical name so a re-observation refreshes rather than duplicates. */
   byName: Map<string, Observation>;
+  /** Keyed by save category, so a card shows one line per category not per roll. */
+  bySave: Map<string, SaveRecord>;
 }
 
 function blank(name: string): Mutable {
@@ -108,7 +159,10 @@ function blank(name: string): Mutable {
     lastSeenClockMs: null,
     lastAction: null,
     diedAtId: null,
+    alsoSummonedBy: null,
+    saves: [],
     byName: new Map(),
+    bySave: new Map(),
   };
 }
 
@@ -180,6 +234,8 @@ export function foldCombatants(rows: EventRow[]): FoldResult {
   const all = new Map<string, Mutable>();
   let latestId = 0;
   let latestClockMs: number | null = null;
+  /** Creature display name -> the party spell that summons it. */
+  const summonedByParty = new Map<string, string>();
 
   /** Null for engine broadcasts that only look like a creature speaking. */
   const get = (name: string | null) => {
@@ -279,6 +335,15 @@ export function foldCombatants(rows: EventRow[]): FoldResult {
       case "spell": {
         if (actor) actor.casting = null;
         if (row.detail === null) break;
+        // A summoning spell cast by the party puts a named creature on our
+        // side. Recorded from the cast rather than inferred from the fight,
+        // because when the summon shares its name with an enemy no amount of
+        // edge-weighing can separate them.
+        if (row.actor_side === "party") {
+          for (const creature of summonedBy(row.detail)) {
+            summonedByParty.set(creature, row.detail);
+          }
+        }
         // A dispel lands on its target and strips, rather than adding.
         const strips = stripsOf(row.detail);
         if (strips !== null) {
@@ -337,6 +402,25 @@ export function foldCombatants(rows: EventRow[]): FoldResult {
         break;
       }
 
+      case "save": {
+        // The speaker is who rolled. Aggregated by category rather than listed
+        // per roll, since a long fight produces dozens and the useful facts are
+        // how often and how low.
+        if (actor === null || row.roll === null) break;
+        const category = row.detail ?? "unknown";
+        const prev = actor.bySave.get(category);
+        actor.bySave.set(category, {
+          category,
+          count: (prev?.count ?? 0) + 1,
+          // Rows arrive in id order, so the last one seen is the most recent.
+          roll: row.roll,
+          id: row.id,
+          clockMs: row.clock_ms,
+          worst: prev === undefined ? row.roll : Math.min(prev.worst, row.roll),
+        });
+        break;
+      }
+
       case "attack":
         if (actor && row.target !== null) actor.lastAction = `attacking ${row.target}`;
         break;
@@ -345,10 +429,17 @@ export function foldCombatants(rows: EventRow[]): FoldResult {
 
   const combatants: Combatant[] = [];
   for (const c of all.values()) {
-    const { byName, ...rest } = c;
+    const { byName, bySave, ...rest } = c;
+    const spell = summonedByParty.get(c.name);
     combatants.push({
       ...rest,
+      // Only flagged where it conflicts. A summon on the party side is already
+      // shown as one, so repeating the spell there would be noise; the case
+      // worth saying out loud is the creature the party summoned that resolved
+      // as an enemy, because then both are in the same row set.
+      alsoSummonedBy: spell !== undefined && c.side === "opponent" ? spell : null,
       observations: [...byName.values()].sort((a, b) => b.id - a.id),
+      saves: [...bySave.values()].sort((a, b) => b.id - a.id),
     });
   }
 

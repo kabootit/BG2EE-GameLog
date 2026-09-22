@@ -204,6 +204,101 @@ export function readBiffEntries(table: Uint8Array, fileCount: number): BiffEntry
   return entries;
 }
 
+// --- CRE: creatures -------------------------------------------------------
+
+/**
+ * The eleven resistance percentages, in the order the file stores them.
+ *
+ * A fixed run of single bytes at 0x59, so the names have to come from
+ * somewhere and the order is the only thing identifying them.
+ */
+export const RESISTANCES = [
+  "fire",
+  "cold",
+  "electricity",
+  "acid",
+  "magic",
+  "magicFire",
+  "magicCold",
+  "slashing",
+  "crushing",
+  "piercing",
+  "missile",
+] as const;
+
+export type Resistance = typeof RESISTANCES[number];
+
+/** The five saving throws, in file order at 0x54. Lower is better. */
+export const SAVES = ["death", "wands", "polymorph", "breath", "spells"] as const;
+
+export type Save = typeof SAVES[number];
+
+export interface Creature {
+  resref: string;
+  /** Strref of the full name. The one the combat log prints. */
+  nameStrref: number;
+  /** Strref of the short name, which is sometimes the only one set. */
+  shortNameStrref: number;
+  xpForKilling: number;
+  currentHp: number;
+  maxHp: number;
+  /** Natural and effective AC. Signed: lower is better, and negatives are normal. */
+  acNatural: number;
+  acEffective: number;
+  thac0: number;
+  attacks: number;
+  saves: Record<Save, number>;
+  resistances: Record<Resistance, number>;
+  /** Class levels; most creatures use only the first. */
+  levels: [number, number, number];
+  race: number;
+  class: number;
+}
+
+/**
+ * Parse a `.CRE`.
+ *
+ * This is the half of the game data the log never prints. Enemy HP, AC, saves
+ * and resistances are simply not in the combat log — the README said they were
+ * unknowable, which is true of the log and false of the files.
+ *
+ * Offsets per IESDP. Note AC and the save/resistance runs are *signed* single
+ * bytes in places: a save of -1 and an AC of -4 are both ordinary, and reading
+ * them unsigned turns them into 255 and 252 without erroring.
+ */
+export function readCre(resref: string, bytes: Uint8Array): Creature {
+  expect(bytes, "CRE", "CRE");
+  const dv = view(bytes);
+
+  const saves = {} as Record<Save, number>;
+  SAVES.forEach((name, i) => {
+    saves[name] = dv.getInt8(0x54 + i);
+  });
+
+  const resistances = {} as Record<Resistance, number>;
+  RESISTANCES.forEach((name, i) => {
+    resistances[name] = dv.getInt8(0x59 + i);
+  });
+
+  return {
+    resref,
+    nameStrref: dv.getUint32(0x08, true),
+    shortNameStrref: dv.getUint32(0x0c, true),
+    xpForKilling: dv.getUint32(0x14, true),
+    currentHp: dv.getUint16(0x24, true),
+    maxHp: dv.getUint16(0x26, true),
+    acNatural: dv.getInt16(0x46, true),
+    acEffective: dv.getInt16(0x48, true),
+    thac0: dv.getUint8(0x52),
+    attacks: dv.getUint8(0x53),
+    saves,
+    resistances,
+    levels: [dv.getUint8(0x234), dv.getUint8(0x235), dv.getUint8(0x236)],
+    race: dv.getUint8(0x272),
+    class: dv.getUint8(0x273),
+  };
+}
+
 // --- TLK: the string table ------------------------------------------------
 
 /**

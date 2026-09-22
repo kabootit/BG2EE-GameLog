@@ -1,20 +1,20 @@
 /**
- * Working out what an effect opcode means, from labelled examples.
+ * Working out what an effect opcode means, from labeled examples.
  *
  * The temptation here is to write an opcode table by hand — opcode 0 is an AC
  * bonus, 5 is charm, and so on. That would reproduce exactly the weakness this
  * whole exercise removes: a list of assertions with nothing behind them but
- * recall. IESDP documents ~400 opcodes and mods add behaviour to them.
+ * recall. IESDP documents ~400 opcodes and mods add behavior to them.
  *
  * So the mapping is learned instead. `src/protections.ts` already carries 66
- * spells labelled `protection` / `disable` / `buff` / `dispel` by hand, and
+ * spells labeled `protection` / `disable` / `buff` / `dispel` by hand, and
  * those labels are the training data. Read each one's opcodes out of the game
  * files, find which opcodes actually separate the labels, and apply the result
  * to every other spell.
  *
  * Two properties make this honest rather than circular:
  *
- *   - **Base rates are divided out.** There are 26 labelled protections and 8
+ *   - **Base rates are divided out.** There are 26 labeled protections and 8
  *     buffs, so a raw count favours protection threefold for no reason. Scores
  *     are per-category rates, not counts.
  *   - **It is cross-validated.** `crossValidate()` re-derives the mapping with
@@ -28,8 +28,40 @@
  * being uninformative is measurable, so it does not need to be asserted.
  */
 
+/**
+ * Opcodes that say how an effect is delivered or decorated, never what it is.
+ *
+ * These must not vote. They correlate with categories purely by accident of
+ * which spells ended up in the labeled set, and the set is small enough for
+ * that to look like signal: opcode 177 is "apply this resource", used by Dispel
+ * Magic, Remove Magic and True Sight, so among 66 labels it reads as
+ * dispel-pure. Wyvern Call's only effect is a 177 pointing at a creature file,
+ * and on that basis it was confidently classified a dispel — a summoning spell
+ * labeled as a removal, at confidence 1.0.
+ *
+ * The purity threshold cannot catch this. Purity measures how lopsided an
+ * opcode is *within the labeled set*, and these genuinely are lopsided there;
+ * what makes them meaningless is that they are ubiquitous outside it.
+ */
+export const NON_SEMANTIC_OPCODES = new Set([
+  139, // display string
+  215, // play visual effect
+  142, // portrait icon
+  174, // play sound
+  146, // cast spell
+  141, // set animation / color glow
+  177, // apply resource - EFF, CRE, anything
+  233, // modify proficiency / usability flag
+  328, // set spell state
+]);
+
+/** The opcodes worth reasoning from: everything that is not plumbing. */
+export function semanticOpcodes(opcodes: number[]): number[] {
+  return opcodes.filter((op) => !NON_SEMANTIC_OPCODES.has(op));
+}
+
 /** A spell reduced to what the classifier sees. */
-export interface Labelled {
+export interface Labeled {
   label: string;
   category: string;
   opcodes: number[];
@@ -66,7 +98,7 @@ export interface RemovalFeature {
  * Which class of state a removal spell strips, or null if it removes nothing.
  *
  * Unlike the category mapping, this one is exact rather than statistical, and it
- * came out of the seven labelled removal spells directly:
+ * came out of the seven labeled removal spells directly:
  *
  *   Spell Thrust   221 p1=5 p2=1     Spellstrike  221 p1=9 p2=1
  *   Secret Word    230 p1=8 p2=1     Pierce Magic 230 p1=8 p2=1
@@ -103,12 +135,12 @@ export interface Vote {
   category: string;
   /** How lopsided this opcode is, 0..1. 1 means it only ever appears in one category. */
   purity: number;
-  /** How many labelled spells carry it. Low counts are not trustworthy. */
+  /** How many labeled spells carry it. Low counts are not trustworthy. */
   support: number;
 }
 
 export interface Thresholds {
-  /** An opcode must appear in at least this many labelled spells. */
+  /** An opcode must appear in at least this many labeled spells. */
   minSupport: number;
   /** ...and point at one category this strongly. */
   minPurity: number;
@@ -138,17 +170,17 @@ export const DEFAULT_THRESHOLDS: Thresholds = {
  * and one spread evenly across four categories scores 0.25.
  */
 export function deriveVotes(
-  labelled: Labelled[],
+  labeled: Labeled[],
   thresholds: Thresholds = DEFAULT_THRESHOLDS,
 ): Map<number, Vote> {
   const categorySize = new Map<string, number>();
-  for (const l of labelled) {
+  for (const l of labeled) {
     categorySize.set(l.category, (categorySize.get(l.category) ?? 0) + 1);
   }
 
   // opcode -> category -> how many spells of that category carry it
   const counts = new Map<number, Map<string, number>>();
-  for (const l of labelled) {
+  for (const l of labeled) {
     for (const op of new Set(l.opcodes)) {
       const perCategory = counts.get(op) ?? new Map<string, number>();
       perCategory.set(l.category, (perCategory.get(l.category) ?? 0) + 1);
@@ -225,7 +257,7 @@ export interface CrossValidation {
 }
 
 /**
- * Leave-one-out: for each labelled spell, learn from the others and predict it.
+ * Leave-one-out: for each labeled spell, learn from the others and predict it.
  *
  * This is the only check that distinguishes a real mapping from one that has
  * memorised its training set. Deriving votes from all 66 and then scoring
@@ -233,20 +265,20 @@ export interface CrossValidation {
  * meaningless the mapping was.
  *
  * Abstentions are counted separately from mistakes. Declining to guess is the
- * designed behaviour, not a failure — an unclassified spell shows untagged,
+ * designed behavior, not a failure — an unclassified spell shows untagged,
  * exactly as it does today.
  */
 export function crossValidate(
-  labelled: Labelled[],
+  labeled: Labeled[],
   thresholds: Thresholds = DEFAULT_THRESHOLDS,
 ): CrossValidation {
   let correct = 0;
   let abstained = 0;
   const mistakes: CrossValidation["mistakes"] = [];
 
-  for (let i = 0; i < labelled.length; i++) {
-    const heldOut = labelled[i];
-    const votes = deriveVotes(labelled.filter((_, j) => j !== i), thresholds);
+  for (let i = 0; i < labeled.length; i++) {
+    const heldOut = labeled[i];
+    const votes = deriveVotes(labeled.filter((_, j) => j !== i), thresholds);
     const got = classifySpell(heldOut.opcodes, votes, thresholds);
 
     if (got === null) abstained++;
@@ -261,5 +293,5 @@ export function crossValidate(
     }
   }
 
-  return { tested: labelled.length, correct, abstained, mistakes };
+  return { tested: labeled.length, correct, abstained, mistakes };
 }

@@ -10,7 +10,15 @@
  */
 import { basename, join } from "jsr:@std/path@1";
 import { LOGS_DIR } from "./config.ts";
-import { EventLinker, type GameEvent, parseLine, parseRoster, SideResolver } from "./parse.ts";
+import {
+  EventLinker,
+  type GameEvent,
+  parseLine,
+  parseRoster,
+  parseStats,
+  PartyStats,
+  SideResolver,
+} from "./parse.ts";
 import { makeInserter, openDb } from "./db.ts";
 
 async function sessionLogs(): Promise<string[]> {
@@ -40,14 +48,24 @@ async function main() {
     const session = basename(file);
     const linker = new EventLinker();
     const sides = new SideResolver();
+    const stats = new PartyStats();
     const text = await Deno.readTextFile(file);
 
     // Pass 1: parse and link, gathering side evidence from the whole session.
     const events: GameEvent[] = [];
+    let lastId = 0;
     for (const line of text.split("\n")) {
       const roster = parseRoster(line);
       if (roster !== null) {
         sides.addRoster(roster);
+        continue;
+      }
+      // Saving-throw targets carry no event id of their own, so they are pinned
+      // to the last row seen. That keeps the timeline ordered against the saves
+      // it has to judge.
+      const saves = parseStats(line);
+      if (saves !== null) {
+        stats.observe(lastId, saves);
         continue;
       }
       const event = parseLine(line);
@@ -55,12 +73,17 @@ async function main() {
         const linked = linker.apply(event);
         sides.observe(linked);
         events.push(linked);
+        lastId = linked.id;
       }
     }
 
     // Pass 2: who is on which side is only knowable once it has all been seen -
-    // an enemy that only shows up late still has to color the earlier rows.
-    for (const event of events) insert(session, sides.label(event));
+    // an enemy that only shows up late still has to color the earlier rows. The
+    // same is true of a save verdict, which needs the targets in force at the
+    // time and those may be emitted after the roll.
+    for (const event of events) {
+      insert(session, { ...sides.label(event), saved: stats.verdict(event) });
+    }
 
     total += events.length;
     console.log(`${session.padEnd(32)} ${events.length} events`);

@@ -22,10 +22,16 @@
   <!-- Offsets back from the newest event, not log ids: 0 is now, 400 is four
        hundred events ago. Literal values so the controls are never blank, even
        before the first fetch resolves. -->
-  <label>events <input type="number" id="from" value="0" min="0" step="10"></label>
-  <label>to <input type="number" id="to" value="400" min="0" step="10"></label>
-  <span class="hint" id="bounds">back</span>
-  <button id="latest" title="back to the most recent events">latest</button>
+  <!-- One group so the range never wraps away from the hint that bounds it.
+       "back" earns its place here, unlike on the events page: this really is an
+       offset counted backwards from the newest event, and the max says how far
+       back the session reaches. -->
+  <span class="group">
+    <label>events <input type="number" id="from" value="0" min="0" step="10"></label>
+    <label>to <input type="number" id="to" value="400" min="0" step="10"></label>
+    <span class="hint" id="bounds">back</span>
+    <button id="latest" title="jump to the most recent events">latest</button>
+  </span>
   <div class="spacer"></div>
   <label><input type="checkbox" id="auto"> auto-refresh</label>
   <button id="refresh">refresh</button>
@@ -76,11 +82,38 @@ function combatantCard(c, latestClockMs) {
   // Only the most useful counter, to keep a card scannable.
   const counter = c.observations.find((o) => o.counter);
 
+  // Saving throws, one line per category. Untagged on purpose: a save is not a
+  // state the creature is in, and nothing here says it succeeded — the game
+  // never prints that. What it does say is that the effect got past magic
+  // resistance and any spell protections, which is the opposite of what the
+  // `Magic Resistance` and `Spell Ineffective` probes above mean.
+  const saves = c.saves.map((s) => {
+    const { text, stale } = ageOf(s, latestClockMs);
+    const spread = s.count > 1 ? `x${s.count}, last ${s.roll}, worst ${s.worst}` : `${s.roll}`;
+    return `<li class="${stale ? "stale" : ""}">` +
+      `<span class="save">save</span><span>${esc(s.category)} ${esc(spread)}</span>` +
+      `<span class="age" title="the spell reached them; the game never says whether they made it">` +
+      `${esc(text)}</span></li>`;
+  }).join("");
+
+  // The one ambiguity the engine makes unresolvable. If the party cast a spell
+  // that summons a creature of this name and it still came out an opponent,
+  // then one of them was ours and nothing in the log says which rows. Said
+  // plainly, because otherwise the figures look like pure enemy activity.
+  const shared = c.alsoSummonedBy
+    ? `<p class="shared">also summoned by your side (${esc(c.alsoSummonedBy)}) — ` +
+      `the engine gives every one of these the same name, so these rows mix ` +
+      `yours with the enemy's</p>`
+    : "";
+
   return `<div class="card ${c.diedAtId !== null ? "gone" : ""}">` +
     `<h3>${esc(c.name)}${meta ? `<span class="meta">${esc(meta)}</span>` : ""}</h3>` +
     (c.casting ? `<p class="casting">casting ${esc(c.casting)}…</p>` : "") +
-    (items ? `<ul class="obs">${items}</ul>` : `<p class="counter">nothing observed</p>`) +
+    (items || saves
+      ? `<ul class="obs">${items}${saves}</ul>`
+      : `<p class="counter">nothing observed</p>`) +
     (counter ? `<p class="counter">${esc(counter.name)}: ${esc(counter.counter)}</p>` : "") +
+    shared +
     `</div>`;
 }
 

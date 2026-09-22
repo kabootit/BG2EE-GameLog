@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { DB_PATH } from "./config.ts";
 import type { GameEvent } from "./parse.ts";
-import type { DerivedSpell } from "./protections.ts";
+import type { Category, DerivedSpell } from "./protections.ts";
 
 export type Db = DatabaseSync;
 
@@ -44,6 +44,7 @@ export function openDb(path: string = DB_PATH): Db {
       target_side TEXT,
       summon      TEXT,
       target_summon TEXT,
+      saved       INTEGER,
       raw        TEXT    NOT NULL,
       PRIMARY KEY (session, id)
     )
@@ -84,12 +85,43 @@ function createSpells(db: Db): void {
       dispellable INTEGER,
       strips      TEXT,
       effect_text TEXT,
+      -- Display names of creatures this spell summons, JSON. Populated only for
+      -- spells that name a .CRE directly; most go through an EFF file, which
+      -- extract.ts cannot follow yet.
+      summons     TEXT,
       source      TEXT NOT NULL
     )
   `);
+  migrateSpells(db);
   // Lookups are by display name (from a log line) far more often than by
   // resref, and the name column is not the primary key.
   db.exec(`CREATE INDEX IF NOT EXISTS idx_spells_name ON spells(name)`);
+}
+
+/**
+ * Columns added to `spells` after it first shipped.
+ *
+ * Same trap as the events table, and it bit the same way: `CREATE TABLE IF NOT
+ * EXISTS` does nothing to a table that already exists, so a database created
+ * before `summons` was added kept failing on insert with "table spells has no
+ * column named summons". Dropping and recreating would also work here, since
+ * extraction rebuilds the contents wholesale, but a migration means an existing
+ * database keeps working without anyone having to know to delete it.
+ *
+ * Names come from this literal list, never from input.
+ */
+const SPELL_COLUMNS: Array<[string, string]> = [
+  ["summons", "TEXT"],
+];
+
+function migrateSpells(db: Db): void {
+  const present = new Set(
+    (db.prepare("PRAGMA table_info(spells)").all() as Array<{ name: string }>)
+      .map((row) => row.name),
+  );
+  for (const [name, type] of SPELL_COLUMNS) {
+    if (!present.has(name)) db.exec(`ALTER TABLE spells ADD COLUMN ${name} ${type}`);
+  }
 }
 
 /** Replace the spell table's contents. Extraction is always a full rebuild. */
@@ -100,8 +132,8 @@ export function makeSpellWriter(db: Db): {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO spells
       (resref, symbol, name, level, type, school, category, confidence,
-       dispellable, strips, effect_text, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       dispellable, strips, effect_text, summons, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return {
     clear: () => db.exec(`DELETE FROM spells`),
@@ -120,6 +152,7 @@ export function makeSpellWriter(db: Db): {
         // A spell can print several messages; stored as JSON rather than a
         // second table, since nothing queries inside it.
         r.effectText.length === 0 ? null : JSON.stringify(r.effectText),
+        r.summons.length === 0 ? null : JSON.stringify(r.summons),
         r.source,
       ),
   };
@@ -144,30 +177,54 @@ export function loadDerivedSpells(db: Db): DerivedSpell[] {
     category: string | null;
     dispellable: number | null;
     strips: string | null;
+    summons: string | null;
   }>;
   try {
+    // Summoning spells are wanted even when uncategorized: what matters is
+    // which creature the cast puts on the field, not whether the spell itself
+    // is a protection.
     rows = db.prepare(
-      `SELECT name, effect_text, category, dispellable, strips
-         FROM spells WHERE category IS NOT NULL AND name IS NOT NULL`,
+      `SELECT name, effect_text, category, dispellable, strips, summons
+         FROM spells
+        WHERE name IS NOT NULL AND (category IS NOT NULL OR summons IS NOT NULL)`,
     ).all() as typeof rows;
-  } catch {
+  } catch (e) {
+    // Only "the table is not there yet" is an expected, silent outcome. This
+    // catch used to swallow everything, and it hid a corrupted index for
+    // several runs: the spells table had 1,936 rows, this returned none, and
+    // nothing anywhere said why. Anything else gets reported.
+    const message = e instanceof Error ? e.message : String(e);
+    if (!/no such table/i.test(message)) {
+      console.error(`spell data unavailable: ${message}`);
+      console.error(`  run \`deno task extract\`; if that fails, delete events.db and`);
+      console.error(`  rebuild with \`deno task import\` — it is derived from logs/.`);
+    }
     return [];
   }
 
+  const json = (raw: string | null): string[] => {
+    if (raw === null) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed as string[] : [];
+    } catch {
+      return [];
+    }
+  };
+
   const derived: DerivedSpell[] = [];
   for (const r of rows) {
-    if (r.name === null || r.category === null) continue;
-    let messages: string[] = [];
-    try {
-      messages = r.effect_text === null ? [] : JSON.parse(r.effect_text) as string[];
-    } catch {
-      messages = [];
-    }
+    if (r.name === null) continue;
+    const messages = json(r.effect_text);
+    const summons = json(r.summons);
     const base: DerivedSpell = {
       name: r.name,
-      category: r.category as DerivedSpell["category"],
+      // Left absent when the files gave no semantics, so hydrate() registers
+      // the summon without also making the spell name look like a condition.
+      ...(r.category === null ? {} : { category: r.category as Category }),
       dispellable: r.dispellable === 1,
       ...(r.strips === null ? {} : { strips: r.strips as DerivedSpell["strips"] }),
+      ...(summons.length === 0 ? {} : { summons }),
     };
     derived.push(base);
     // A spell can print more than one message, so each is registered in its own
@@ -189,6 +246,7 @@ export interface SpellRow {
   dispellable: boolean | null;
   strips: string | null;
   effectText: string[];
+  summons: string[];
   source: string;
 }
 
@@ -217,6 +275,9 @@ const COLUMNS: Array<[string, string]> = [
   ["target_side", "TEXT"],
   ["summon", "TEXT"],
   ["target_summon", "TEXT"],
+  // 1 made, 0 failed, null unknown. Only ever set for party members: the log
+  // prints no target, and the tap can read one only from characters[id].
+  ["saved", "INTEGER"],
   ["raw", "TEXT"],
 ];
 
@@ -240,8 +301,8 @@ export function makeInserter(db: Db): (session: string, e: GameEvent) => void {
     INSERT OR REPLACE INTO events
       (session, id, wall_clock, game_ticks, clock_ms, game_time, screen,
        kind, actor, target, amount, roll, resisted, detail, critical, spell, spell_candidate,
-       actor_side, target_side, summon, target_summon, raw)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       actor_side, target_side, summon, target_summon, saved, raw)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return (session, e) => {
     stmt.run(
@@ -266,6 +327,7 @@ export function makeInserter(db: Db): (session: string, e: GameEvent) => void {
       e.targetSide,
       e.summon,
       e.targetSummon,
+      e.saved === null ? null : e.saved ? 1 : 0,
       e.raw,
     );
   };

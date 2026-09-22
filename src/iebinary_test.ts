@@ -19,6 +19,7 @@ import {
   BIFF_HEADER_SIZE,
   readBiffEntries,
   readBiffHeader,
+  readCre,
   readKey,
   readSignature,
   readSpl,
@@ -276,4 +277,67 @@ Deno.test("the dispel bit is separated from the resistance bit", () => {
   const spell = readSpl("x", splFixture(1));
   assertEquals(spell.features[0].dispelResist, 3);
   assertEquals(spell.features[0].dispellable, true);
+});
+
+// --- CRE ------------------------------------------------------------------
+
+/**
+ * A creature with negative AC and a negative save, because those are the
+ * normal case in BG2 and the bytes are signed.
+ */
+function creFixture(): Uint8Array {
+  const b = new Bytes()
+    .ascii("CRE ").ascii("V1.0")
+    .u32(12345) // long name strref
+    .u32(12346) // short name strref
+    .at(0x14).u32(2000) // XP for killing
+    .at(0x24).u16(58).u16(64) // current / max HP
+    .at(0x46).u16(0xfffc) // AC natural: -4
+    .at(0x48).u16(0xfffe) // AC effective: -2
+    .at(0x52).ascii("") // THAC0 placeholder, overwritten below
+    .at(0x300).done();
+
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  dv.setUint8(0x52, 5); // THAC0
+  dv.setUint8(0x53, 3); // attacks
+  // Saves: death -1, then 2, 3, 4, 5.
+  [-1, 2, 3, 4, 5].forEach((v, i) => dv.setInt8(0x54 + i, v));
+  // Resistances: fire 100, cold 0, ... magic 50 at index 4.
+  [100, 0, 0, 0, 50, 0, 0, 10, 10, 10, 0].forEach((v, i) => dv.setInt8(0x59 + i, v));
+  dv.setUint8(0x234, 12); // level 1
+  dv.setUint8(0x272, 7); // race
+  dv.setUint8(0x273, 9); // class
+  return b;
+}
+
+Deno.test("a creature's name strrefs and stats are read", () => {
+  const cre = readCre("wyvernsu", creFixture());
+  assertEquals(cre.nameStrref, 12345);
+  assertEquals(cre.shortNameStrref, 12346);
+  assertEquals(cre.xpForKilling, 2000);
+  assertEquals([cre.currentHp, cre.maxHp], [58, 64]);
+  assertEquals(cre.thac0, 5);
+  assertEquals(cre.attacks, 3);
+  assertEquals(cre.levels[0], 12);
+  assertEquals([cre.race, cre.class], [7, 9]);
+});
+
+Deno.test("negative AC and saves survive as negative", () => {
+  // Signed single bytes and signed words. Read unsigned, an AC of -4 becomes
+  // 252 and a save of -1 becomes 255 - both plausible-looking and both wrong.
+  const cre = readCre("x", creFixture());
+  assertEquals(cre.acNatural, -4);
+  assertEquals(cre.acEffective, -2);
+  assertEquals(cre.saves.death, -1);
+  assertEquals(cre.saves.wands, 2);
+});
+
+Deno.test("resistances are named in file order", () => {
+  // A fixed run of eleven bytes with nothing identifying them, so the order is
+  // the only thing that makes them meaningful.
+  const cre = readCre("x", creFixture());
+  assertEquals(cre.resistances.fire, 100);
+  assertEquals(cre.resistances.magic, 50);
+  assertEquals(cre.resistances.slashing, 10);
+  assertEquals(cre.resistances.missile, 0);
 });

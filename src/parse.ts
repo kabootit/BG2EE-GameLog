@@ -1,4 +1,4 @@
-import { ROSTER_MARKER, TAP_MARKER } from "./config.ts";
+import { ROSTER_MARKER, STATS_MARKER, TAP_MARKER } from "./config.ts";
 
 export type Side = "party" | "opponent" | "neutral";
 
@@ -78,6 +78,11 @@ export interface GameEvent {
    */
   summon: string | null;
   targetSummon: string | null;
+  /**
+   * Whether a saving throw succeeded. Null unless the tap reported a target for
+   * this creature, which it can only do for the party.
+   */
+  saved: boolean | null;
   raw: string;
 }
 
@@ -208,7 +213,13 @@ const RULES: Array<{ kind: Kind; re: RegExp; detail?: string }> = [
   { kind: "critical", re: /^Critical\s+(?<detail>.+)$/i },
 
   // "Save vs. Spell : 11", "Save vs. Death : 21"
-  { kind: "save", re: /^Save\s+vs\.?\s*(?<detail>[A-Za-z][A-Za-z .]*?)\s*:\s*(?<amount>-?\d+)$/i },
+  //
+  // The number goes to `roll`, not `amount`, for the same reason an attack roll
+  // does: it is a die result. `amount` is damage and experience — things worth
+  // summing — and a saving throw is neither. It is also the modified result
+  // rather than a raw d20: the observed range across the corpus is -1 to 26,
+  // and "Cernd: Save vs. Spell : -1" is real game output.
+  { kind: "save", re: /^Save\s+vs\.?\s*(?<detail>[A-Za-z][A-Za-z .]*?)\s*:\s*(?<roll>-?\d+)$/i },
   { kind: "save", re: /\bSav(?:e|ing)\s+Throw\b/i },
 
   { kind: "death", re: /^Death$/i },
@@ -367,6 +378,10 @@ export function parseLine(line: string): GameEvent | null {
     targetSide: null,
     summon: null,
     targetSummon: null,
+    // Filled in during the import's second pass, once every stats line in the
+    // session has been seen. Null for any creature the tap cannot report on,
+    // which is everything outside the party.
+    saved: null,
     ...classify(raw),
   };
 }
@@ -570,21 +585,32 @@ export class SideResolver {
     // column, rather than being folded into the side - keeping it out means
     // "party vs opponent" totals still account for everything the party fielded.
     //
-    // The roster is exact when present; before the roster tap existed, speech is
-    // the stand-in, since party members answer when clicked and summons never
-    // say anything. A member who is never clicked would be taken for a summon,
-    // which the roster corrects for good.
+    // Membership takes either of two positive signals, and needs both available
+    // because neither is complete on its own:
     //
-    // Anything on the party's side that is not a roster member is a summon,
-    // including creatures reached by inference above rather than by auto-pause.
-    // A shapeshifted druid lands here too — the engine prints "Greater Bearwere"
-    // with nothing tying it back to Cernd — which is wrong in name only, and far
-    // better than the alternative of calling it an enemy.
+    //   - **The roster**, from the engine's own `characters` table. Exact when
+    //     full, but it is populated *incrementally as the game loads*, so a
+    //     session that ends early carries a partial one. One 574-line session
+    //     never got past five entries and omitted the protagonist entirely.
+    //   - **Speech.** Party members answer when clicked; summons never say
+    //     anything. Misses a member who is never clicked.
+    //
+    // This used to prefer the roster and fall back to speech only when there was
+    // none at all, which meant a partial roster actively overrode good evidence:
+    // Rage was absent from those five names, so he was called a summon despite
+    // having spoken 23 times in the same session. A union cannot make that
+    // mistake — and it cannot wrongly admit a summon either, since a summon
+    // neither speaks nor appears in `characters`.
+    //
+    // Anything left on the party's side is a summon, including creatures reached
+    // by inference rather than by auto-pause. A shapeshifted druid lands here
+    // too — the engine prints "Greater Bearwere" with nothing tying it back to
+    // Cernd — which is wrong in name only, and far better than calling it an
+    // enemy.
     this.summons = new Set<string>();
     for (const [name, side] of sides) {
       if (side !== "party") continue;
-      const isMember = this.roster.size > 0 ? this.roster.has(name) : this.spoke.has(name);
-      if (!isMember) this.summons.add(name);
+      if (!this.roster.has(name) && !this.spoke.has(name)) this.summons.add(name);
     }
 
     this.sides = sides;
@@ -692,5 +718,153 @@ export class EventLinker {
     }
 
     return linked;
+  }
+}
+
+/**
+ * Party saving-throw targets, as the tap read them from `characters[id]`.
+ *
+ * A roll at or above the target succeeds. The engine hands the whole thing over
+ * pre-formatted and localized, which is why this is a text parse rather than
+ * five numbers:
+ *
+ *   Paralysis / Poison / Death: 3 (-2) | Rod / Staff / Wand: 7 (-2) | ...
+ *
+ * The number is the *final* target and the parenthesized figure is how much of
+ * it came from bonuses. Confirmed against the AD&D2e class tables rather than
+ * assumed: Anomen's `Death: 3 (-2)` is a base of 5, which is exactly a level-13
+ * cleric's save vs death, and Neera's `Spell: 4 (-4)` is a base of 8, exactly a
+ * level-13 mage's. Two independent matches, so the displayed value is the
+ * target and the comparison needs no further adjustment.
+ */
+export interface PartySaves {
+  name: string;
+  /** Keyed by the category the combat log uses, not the label the engine prints. */
+  targets: Record<string, number>;
+}
+
+/**
+ * Engine label -> the category `Save vs. X` uses in the combat log.
+ *
+ * The two vocabularies differ, and neither is derivable from the other: the
+ * record screen says "Paralysis / Poison / Death" where the log says "Death".
+ */
+const SAVE_CATEGORY: Record<string, string> = {
+  "paralysis / poison / death": "Death",
+  "rod / staff / wand": "Wand",
+  "petrification / polymorph": "Polymorph",
+  "breath weapon": "Breath Weapon",
+  "spell": "Spell",
+};
+
+/** Read an `A7STATS` line. Same envelope handling as parseRoster. */
+export function parseStats(line: string): PartySaves | null {
+  const trimmed = line.replace(/\r/g, "");
+  const at = trimmed.indexOf(`${STATS_MARKER}\t`);
+  if (at === -1) return null;
+  const prefix = trimmed.slice(0, at);
+  if (prefix.length > 0 && !prefix.includes("LUA:")) return null;
+
+  const [, name, text] = trimmed.slice(at).split("\t");
+  if (!name || !text) return null;
+
+  const targets: Record<string, number> = {};
+  // " | " is the tap's replacement for the newlines the engine used.
+  for (const part of text.split("|")) {
+    const m = /^\s*(.+?)\s*:\s*(-?\d+)/.exec(part);
+    if (m === null) continue;
+    const category = SAVE_CATEGORY[m[1].toLowerCase().replace(/\s+/g, " ").trim()];
+    if (category !== undefined) targets[category] = Number(m[2]);
+  }
+
+  return Object.keys(targets).length > 0 ? { name: name.trim(), targets } : null;
+}
+
+/**
+ * Whether a party member's saving throw succeeded.
+ *
+ * Kept as a timeline rather than a single latest value, because saves move
+ * during a session — a Bless lands, an item is equipped, someone levels — and
+ * the tap emits only on change. A save must be judged against the targets in
+ * force when it was rolled, not the newest ones.
+ *
+ * Returns null for anyone the tap never reported, which is every creature
+ * outside the party. That is most of them, and it is the honest answer: the log
+ * gives no target for an enemy and creature names map to several stat blocks,
+ * so there is nothing to compare against.
+ */
+/**
+ * Whether to record a computed save outcome. No — because there is nothing left
+ * for it to say.
+ *
+ * **The engine prints `Save vs. X : n` only when the save succeeds.** A failed
+ * save produces no save line at all; what appears instead is the effect landing
+ * (`Confusion : Anomen`). So every row of `kind = 'save'` is already a success,
+ * and `compare()` can only ever return "made" for one.
+ *
+ * Three measurements, in FINDINGS.md at more length: 95 of 109 confusion
+ * landings have no save row near the creature; no printed roll is ever below the
+ * target in force (192 of 192 clear it, against the A7STATS timeline); and mean
+ * printed roll correlates +0.54 with the target across 10 character+category
+ * groups, which is what conditioning on success does to a die — it truncates the
+ * low tail. That truncation is why the roll distribution looks nothing like a
+ * uniform d20.
+ *
+ * `compare()` stays whole and stays tested: the arithmetic is sound, it simply
+ * has no failures to find. Failed saves live on the effect rows, and are a
+ * superset — an effect that landed means a failed save *or* one that allowed no
+ * save, and the log does not distinguish them.
+ */
+const VERDICTS_TRUSTED = false;
+
+export class PartyStats {
+  private readonly timeline = new Map<string, Array<{ id: number; targets: Record<string, number> }>>();
+
+  /** `id` is the most recent event id seen, since a stats line carries none. */
+  observe(id: number, stats: PartySaves): void {
+    const history = this.timeline.get(stats.name) ?? [];
+    history.push({ id, targets: stats.targets });
+    this.timeline.set(stats.name, history);
+  }
+
+  /** The targets in force at an event id, or null if none were known yet. */
+  targetsAt(name: string, id: number): Record<string, number> | null {
+    const history = this.timeline.get(name);
+    if (history === undefined) return null;
+    // Latest entry at or before this event. Saves rolled before the first
+    // stats line get nothing rather than the earliest known values, which
+    // would be wrong in whichever direction the character has since changed.
+    let found: Record<string, number> | null = null;
+    for (const entry of history) {
+      if (entry.id > id) break;
+      found = entry.targets;
+    }
+    return found;
+  }
+
+  /**
+   * The rule as designed: AD&D2e succeeds on a roll at or above the target.
+   *
+   * Kept whole and kept tested, because the arithmetic is not the part that
+   * turned out to be wrong. What is missing is any established relationship
+   * between the two numbers it compares — see VERDICTS_TRUSTED.
+   */
+  compare(event: GameEvent): boolean | null {
+    if (event.kind !== "save" || event.actor === null || event.roll === null) return null;
+    if (event.detail === null) return null;
+    const targets = this.targetsAt(event.actor, event.id);
+    if (targets === null) return null;
+    const target = targets[event.detail];
+    return target === undefined ? null : event.roll >= target;
+  }
+
+  /** What gets written to a row. Nothing, for now: see VERDICTS_TRUSTED. */
+  verdict(event: GameEvent): boolean | null {
+    return VERDICTS_TRUSTED ? this.compare(event) : null;
+  }
+
+  /** Whether the tap reported anyone at all, for reporting. */
+  get size(): number {
+    return this.timeline.size;
   }
 }

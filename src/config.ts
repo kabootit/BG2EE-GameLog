@@ -69,3 +69,22 @@ export const TAP_MARKER = "A7LOG";
 
 /** Prefix for the tap's party-roster lines. State, not an event - never stored as a row. */
 export const ROSTER_MARKER = "A7ROSTER";
+
+/**
+ * Prefix for the tap's party saving-throw targets. State, like the roster.
+ *
+ * The combat log prints a save's result but never whether it succeeded. These
+ * are the numbers it has to beat, read live from `characters[id]` so they
+ * include level and any temporary modifier.
+ */
+export const STATS_MARKER = "A7STATS";
+
+/**
+ * Prefix for the tap's own diagnostics. Never an event, never state.
+ *
+ * Exists because the roster tap silently emitted nothing for the whole life of
+ * the project: `characters` is keyed by pointer-like integers, not 0..9, so the
+ * scan found no one and returned. A channel for the tap to say what it is
+ * actually looking at is worth the one line.
+ */
+export const PROBE_MARKER = "A7PROBE";

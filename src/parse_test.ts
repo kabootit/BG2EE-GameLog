@@ -14,6 +14,8 @@ import {
   EventLinker,
   type GameEvent,
   parseLine,
+  parseStats,
+  PartyStats,
   SideResolver,
   stripColor,
 } from "./parse.ts";
@@ -324,7 +326,7 @@ Deno.test("weight of evidence decides, not merely which edge came first", () => 
 });
 
 Deno.test("roster membership outranks any amount of fighting", () => {
-  // A charmed party member attacking the party must not be relabelled an
+  // A charmed party member attacking the party must not be relabeled an
   // opponent - the roster is observed, and inference never overrides it.
   const sides = resolveSides(PARTY, [
     ...WYVERN_FIGHT,
@@ -377,4 +379,187 @@ Deno.test("evidence quality is what separates the two cases", () => {
   ]);
   assertEquals(summon.sideOf("Fire Elemental"), "party", "one stray party hit");
   assertEquals(enemy.sideOf("Harpy"), "opponent", "sustained party attention");
+});
+
+Deno.test("a saving throw is a die result, so it lands in roll", () => {
+  // Parity with an attack, which puts its total in `roll` and its outcome in
+  // `detail`. A save has no outcome to put anywhere - the game never prints one
+  // - so `detail` carries the category instead.
+  const e = classify("Anomen: Save vs. Death : 7");
+  assertEquals(e.kind, "save");
+  assertEquals(e.actor, "Anomen");
+  assertEquals(e.roll, 7);
+  assertEquals(e.amount, null, "not amount: that column is for things worth summing");
+  assertEquals(e.detail, "Death");
+});
+
+Deno.test("a negative saving throw is real, not a parse artifact", () => {
+  // "Cernd: Save vs. Spell : -1" appears in the corpus. Save penalties stack
+  // onto a low roll, and the observed range across all sessions is -1 to 26 -
+  // which is also how we know the number is the modified result, not a d20.
+  const e = classify("Cernd: Save vs. Spell : -1");
+  assertEquals(e.kind, "save");
+  assertEquals(e.roll, -1);
+});
+
+Deno.test("every save category the corpus contains is recognized", () => {
+  for (const [text, category] of [
+    ["X: Save vs. Spell : 11", "Spell"],
+    ["X: Save vs. Death : 21", "Death"],
+    ["X: Save vs. Breath Weapon : 9", "Breath Weapon"],
+    ["X: Save vs. Wand : 16", "Wand"],
+    ["X: Save vs. Polymorph : 8", "Polymorph"],
+  ] as const) {
+    const e = classify(text);
+    assertEquals(e.kind, "save", text);
+    assertEquals(e.detail, category, text);
+  }
+});
+
+// --- party saving-throw targets -------------------------------------------
+
+/** The real A7STATS payload, verbatim from a session log. */
+const ANOMEN_STATS =
+  "Paralysis / Poison / Death: 3 (-2) | Rod / Staff / Wand: 7 (-2) | " +
+  "Petrification / Polymorph: 6 (-2) | Breath Weapon: 9 (-2) | Spell: 8 (-2)";
+
+const statsLine = (name: string, text: string) =>
+  `2026-01-01 00:00:00.000 B[1:2] INFO: LUA: A7STATS\t${name}\t${text}`;
+
+Deno.test("saving-throw targets are read from the engine's own wording", () => {
+  // The two vocabularies differ and neither is derivable from the other: the
+  // record screen says "Paralysis / Poison / Death" where the combat log says
+  // "Death". The parenthesized figure is how much of the target came from
+  // bonuses; the number before it is what the roll has to beat.
+  const s = parseStats(statsLine("Anomen", ANOMEN_STATS))!;
+  assertEquals(s.name, "Anomen");
+  assertEquals(s.targets, {
+    Death: 3,
+    Wand: 7,
+    Polymorph: 6,
+    "Breath Weapon": 9,
+    Spell: 8,
+  });
+});
+
+Deno.test("a negative target is read as negative", () => {
+  // Cernd's real values. A target below 1 means he cannot fail that save, which
+  // is normal for a high-level character with save-boosting gear.
+  const s = parseStats(statsLine("Cernd", "Paralysis / Poison / Death: -3 (-8) | Spell: -3 (-13)"))!;
+  assertEquals(s.targets.Death, -3);
+  assertEquals(s.targets.Spell, -3);
+});
+
+Deno.test("non-stats lines and unknown labels are ignored", () => {
+  assertEquals(parseStats(tap("Anomen: Save vs. Death : 7")), null);
+  assertEquals(parseStats("A7STATS\tAnomen"), null, "no payload");
+  // An unrecognized label must not become a category of its own.
+  assertEquals(parseStats(statsLine("X", "Something Else: 4")), null);
+});
+
+Deno.test("a save is judged against the targets in force when it was rolled", () => {
+  // The reason this is a timeline and not a single value: saves move mid-session
+  // as a Bless lands or an item is equipped, and the tap emits only on change.
+  const stats = new PartyStats();
+  stats.observe(10, parseStats(statsLine("Jan", "Paralysis / Poison / Death: 11"))!);
+  stats.observe(50, parseStats(statsLine("Jan", "Paralysis / Poison / Death: 9 (-2)"))!);
+
+  const save = (id: number, roll: number) => {
+    const e = parseLine(tap(`Jan: Save vs. Death : ${roll}`, id))!;
+    return stats.compare(e);
+  };
+
+  // Target 11 early, 9 later: a roll of 10 flips from failed to made.
+  assertEquals(save(20, 10), false, "against the earlier target of 11");
+  assertEquals(save(60, 10), true, "against the later target of 9");
+});
+
+Deno.test("a save rolled before any target was known stays unknown", () => {
+  // Falling back to the earliest known values would be wrong in whichever
+  // direction the character has since changed.
+  const stats = new PartyStats();
+  stats.observe(100, parseStats(statsLine("Jan", "Paralysis / Poison / Death: 9"))!);
+  assertEquals(stats.compare(parseLine(tap("Jan: Save vs. Death : 10", 50))!), null);
+});
+
+Deno.test("no verdict is claimed for a creature the tap never reported", () => {
+  // Every enemy. The log gives no target and creature names map to several stat
+  // blocks, so there is nothing honest to compare against.
+  const stats = new PartyStats();
+  stats.observe(1, parseStats(statsLine("Anomen", ANOMEN_STATS))!);
+  assertEquals(stats.compare(parseLine(tap("Wyvern: Save vs. Death : 4", 9))!), null);
+  // And a category the stats line did not carry.
+  assertEquals(stats.compare(parseLine(tap("Anomen: Save vs. Fear : 4", 9))!), null);
+});
+
+Deno.test("the boundary is at-or-above the target, not above it", () => {
+  // AD&D2e: the save succeeds on a roll equal to the target.
+  const stats = new PartyStats();
+  stats.observe(1, parseStats(statsLine("Anomen", ANOMEN_STATS))!);
+  const at = (roll: number) => stats.compare(parseLine(tap(`Anomen: Save vs. Death : ${roll}`, 9))!);
+  assertEquals(at(2), false);
+  assertEquals(at(3), true, "equal to the target succeeds");
+  assertEquals(at(4), true);
+});
+
+Deno.test("a partial roster does not override speech", () => {
+  // The reported bug. `characters` fills in incrementally as the game loads, so
+  // a session that ends early emits a roster missing real members - one 574-line
+  // session never got past five entries and omitted the protagonist. Preferring
+  // the roster whenever one existed then overrode better evidence and called him
+  // a summon, despite 23 dialogue lines in the same session.
+  const sides = new SideResolver();
+  sides.addRoster(["Jaheira", "Jan", "Cernd", "Anomen", "Neera"]);
+  const linker = new EventLinker();
+  for (const [i, text] of [
+    "Rage: Well met.",
+    "Water Kin Elemental: Takes 3 missile damage from Rage",
+    "Water Kin Elemental: Takes 2 missile damage from Jan",
+  ].entries()) {
+    const e = parseLine(tap(text, i + 1));
+    if (e !== null) sides.observe(linker.apply(e));
+  }
+
+  assertEquals(sides.sideOf("Rage"), "party");
+  assertEquals(sides.isSummon("Rage"), false, "he spoke, so he is a member");
+  assertEquals(sides.isSummon("Jan"), false, "in the roster");
+  assertEquals(sides.sideOf("Water Kin Elemental"), "opponent");
+});
+
+Deno.test("a real summon is still a summon under the union rule", () => {
+  // Widening membership must not let summons through. A summon appears in
+  // neither signal: it never speaks, and the engine's `characters` table only
+  // ever holds party members.
+  const sides = new SideResolver();
+  sides.addRoster(["Neera"]);
+  const linker = new EventLinker();
+  for (const [i, text] of [
+    "Neera: I can do this.",
+    ...Array.from({ length: 6 }, () => "Wyvern: Takes 9 piercing damage from Neera"),
+    ...Array.from({ length: 6 }, () => "Fire Elemental: Takes 5 poison damage from Wyvern"),
+  ].entries()) {
+    const e = parseLine(tap(text, i + 1));
+    if (e !== null) sides.observe(linker.apply(e));
+  }
+
+  assertEquals(sides.sideOf("Fire Elemental"), "party");
+  assertEquals(sides.isSummon("Fire Elemental"), true, "silent and not in the roster");
+  assertEquals(sides.isSummon("Neera"), false);
+});
+
+Deno.test("no save verdict is recorded, because a save row is already a success", () => {
+  // The engine prints a save line only when the save succeeds - a failure shows
+  // up as the effect landing instead - so computing "made" for a save row adds
+  // nothing that the row's own existence did not already say. Hence
+  // VERDICTS_TRUSTED, and hence "saves made" on the group-by heading.
+  //
+  // compare() still answers, so the arithmetic stays under test.
+  const stats = new PartyStats();
+  stats.observe(1, parseStats(statsLine("Anomen", ANOMEN_STATS))!);
+  const rolled = (roll: number) => parseLine(tap(`Anomen: Save vs. Death : ${roll}`, 9))!;
+
+  assertEquals(stats.compare(rolled(2)), false, "the rule still computes");
+  assertEquals(stats.compare(rolled(9)), true);
+  assertEquals(stats.verdict(rolled(2)), null, "but nothing is claimed");
+  assertEquals(stats.verdict(rolled(9)), null);
 });

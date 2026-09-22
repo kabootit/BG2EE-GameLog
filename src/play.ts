@@ -8,7 +8,14 @@
 import { join } from "jsr:@std/path@1";
 import { TextLineStream } from "jsr:@std/streams@1/text-line-stream";
 import { GAME_BINARY, LOGS_DIR, TAP_MARKER } from "./config.ts";
-import { EventLinker, parseLine, parseRoster, SideResolver } from "./parse.ts";
+import {
+  EventLinker,
+  parseLine,
+  parseRoster,
+  parseStats,
+  PartyStats,
+  SideResolver,
+} from "./parse.ts";
 import { makeInserter, makeSideUpdater, openDb } from "./db.ts";
 
 const HOME = Deno.env.get("HOME") ?? "";
@@ -66,6 +73,10 @@ async function main() {
   const updateSide = makeSideUpdater(db);
   const linker = new EventLinker();
   const sides = new SideResolver();
+  const stats = new PartyStats();
+  // The most recent event id, so a stats line - which carries none - can be
+  // placed on the same timeline as the saves it judges.
+  let lastId = 0;
 
   // Live capture writes rows before it can know whose side anyone is on. When a
   // name is later settled, rewrite the rows already stored for it.
@@ -125,10 +136,22 @@ async function main() {
       return;
     }
 
+    // Saving-throw targets. Pinned to the last row seen, since the line carries
+    // no id of its own. A live capture can only judge a save against what was
+    // known at the time; a later `deno task import` sees the whole session and
+    // resolves any that were rolled before their targets arrived.
+    const saves = parseStats(line);
+    if (saves !== null) {
+      stats.observe(lastId, saves);
+      return;
+    }
+
     const event = parseLine(line);
     if (!event) return;
     const linked = linker.apply(event);
     sides.observe(linked);
+    lastId = linked.id;
+    linked.saved = stats.verdict(linked);
 
     // Storage must never be able to end the capture. The raw log above is the
     // source of truth and has already been written, so a failed insert costs
