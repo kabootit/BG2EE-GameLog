@@ -315,4 +315,34 @@ the engine works: `strings` on the binary for the Lua API surface and the `comba
 `grep` on `ui.menu` for the anchors and their counts, `PRAGMA table_info` for the schema. Where that
 was not possible — the exact English wording of combat feedback — the honest move was to ship
 provisional rules with an `other` bucket and a `deno task patterns` workflow, rather than guessing and
-mislabelling data.
+mislabeling data.
+
+### 18. Ask what a table is a population *of* before computing statistics over it
+
+The `save` rows looked like the saving throws attempted. They are the saving throws **made** — the
+engine prints a save line only on success, and a failure appears as the effect landing instead. Every
+wrong conclusion downstream followed from that one unexamined assumption:
+
+- "No party member has ever failed a save" — true of the table, vacuous about the party. 120 disabling
+  statuses on party members were sitting in the `effect` rows the whole time.
+- The roll distribution was non-uniform, mean 13.0 against a d20's 10.5, with the low end nearly
+  empty. That was read as evidence the printed number sat on a different scale from the target, and a
+  working comparison was withdrawn because of it. It was a truncated tail: conditioning on success
+  removes precisely the low rolls.
+- A correlation test then checked mean roll against the *save bonus*, found none, and took that as
+  confirmation. The variable that mattered was the **target** — it correlates +0.54, which is the
+  signature of the selection effect rather than of a broken scale.
+
+Two cheap checks would have caught it immediately, and both are worth running by default:
+
+- **Compare the count against an independent count of the same thing.** 467 party saves against 120
+  observed disabling effects is a ~26% failure rate; against 0 recorded failures it is a contradiction
+  that needs no statistics to see.
+- **Look for the absent row, not only the present one.** The decisive observation was an effect
+  landing with no save line beside it. Every query here was written over rows that exist, so none of
+  them could see it.
+
+The general form: a conditioned dataset yields statistics that look fine and mean something else.
+State what the population is in the code or doc that defines it. The headings in `GROUP_COLUMNS` now
+read "saves made" and "closest call" so the screen cannot imply the wrong one again, and the
+saving-throw section of `FINDINGS.md` records the measurements.

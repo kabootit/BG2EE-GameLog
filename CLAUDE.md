@@ -53,8 +53,14 @@ do not have those failure modes.
 - **Never `git push` without explicit confirmation.** Hard rule. Applies to anything that leaves the
   machine — pushing, creating or changing remotes, publishing. Commit locally, report what is staged,
   then ask. Local operations (staging, committing, branching) need no permission.
-- **Show the commit message before committing.** Every time. Propose it, wait for approval or a
-  rewording, then commit. Applies to `--amend` too, since that rewrites a message.
+
+  **Ask immediately before the push, every time — an earlier instruction does not carry.** "Commit and
+  push" is a request for the whole job, not advance authorization for the push half: make the commits,
+  then stop and ask.
+- **Show the commit message before committing.** Every time, and for every commit — a batch of
+  messages approved once is not a substitute for reading each one before its commit lands. Propose it,
+  wait for approval or a rewording, then commit. Applies to `--amend` too, since that rewrites a
+  message.
 - **Commit at logical boundaries, not per edit.** One commit per completed change, however many file
   edits that took. While something is still being iterated on — a paragraph being reworded, a rule
   being tuned — `--amend` the in-progress commit instead of stacking new ones. Six commits that all

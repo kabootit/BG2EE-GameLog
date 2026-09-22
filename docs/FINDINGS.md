@@ -260,6 +260,52 @@ it would render this same log-derived model.
 > To falsify this from inside the sandbox if ever in doubt: `characters` is a plain Lua table, so
 > `for k in pairs(characters)` from `a7log.lua` enumerates exactly which ids the engine writes.
 
+## Saving throws: the log records successes only — settled
+
+A saving throw looks like it has no outcome in the log, and the outcome is in fact there: it is
+carried by whether the line exists at all.
+
+**The engine prints `<Name>: Save vs. <Type> : <n>` only when the save succeeds.** A failed save
+produces no save line — what appears instead is the effect landing:
+
+```
+Umber Hulk: Attacks Anomen
+Confusion : Anomen            <- kind=effect. This IS the failed save.
+```
+
+Three independent measurements, all agreeing:
+
+- **95 of 109** confusion landings across the corpus have no save row within three rows of the
+  creature, for party and enemies alike (Boring Beetle, Nymph, Fire Elemental, Anomen).
+- **No printed roll is ever below the target in force.** 192 of 192 resolvable party saves clear it,
+  judged against the `A7STATS` timeline rather than a summary value. A rule that were merely wrong
+  would miss in both directions.
+- **Mean printed roll correlates +0.54 with the target** across 10 character+category groups — harsher
+  target, higher mean printed roll. That is what conditioning on success does to a die: it truncates
+  the low tail. Jan, with the best Spell save on the roster, has the lowest mean printed roll (10.9,
+  near a raw d20's 10.5); Jaheira, with the worst, has 15.4.
+
+That truncation explains the distribution that first looked anomalous: over 1,623 rolls, 1–3 occur 1, 2
+and 12 times against ~81 expected, the peak is 15–16 and the mean is 13.0 rather than 10.5. Rolls above
+20 (81 of them, to 26) are the save bonus applied to the roll.
+
+**Consequences for the data model.**
+
+- `kind = 'save'` means *a save that was made*. The count is "saves made", and the lowest roll is the
+  closest call, not a failure.
+- **A per-row verdict is therefore pointless rather than wrong.** `roll >= target` holds for every
+  printed row by construction, so a column computing it can only ever read "made".
+  `VERDICTS_TRUSTED = false` in `parse.ts` stays off for that reason — the arithmetic in `compare()` is
+  sound and stays tested, it just has nothing to distinguish.
+- **Failed saves are found on the effect rows, not the save rows.** They are a superset: an effect that
+  landed means either a failed save or an effect that allowed none, and the log does not separate those.
+  Label accordingly — "effects that got through" is honest, "failed saves" overstates it.
+
+> Recorded because it cost two wrong answers in a row. The first read the 0% failure rate as fact; the
+> second read the truncated distribution as a broken comparison. Both came from treating the save table
+> as the population of save attempts when it is the population of successes. The observation that broke
+> it open was a user noticing an effect land with no save line beside it.
+
 ## Message forms that carry creature state
 
 The inspector's inputs, with the ownership rule for each — which differs by form, and is the thing
